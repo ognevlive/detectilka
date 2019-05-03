@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>User: {{ user.username }}</h1>
+	    <div>
+	        <table>
+			    <h3>List of cheched files:</h3>
+	            <tr>
+	                <th> Name </th>
+	                <th> Hash </th>
+	                <th> Answer </th>
+	            </tr>
+	            {% for sample in samples %}
+	            <tr>
+	                <td>{{ sample.file_name }}</td>
+	                <td>{{ sample.hash }}</td>
+	                <td>{{ sample.answer }}</td>
+	            </tr>
+	            {% endfor %}
+	        </table>
+	    </div>
+    <hr>
+{% endblock %}
