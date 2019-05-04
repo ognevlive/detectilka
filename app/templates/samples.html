@@ -1,0 +1,19 @@
+<label id="value_lable">
+	   <table>
+			    <h3>Found files:</h3>
+	            <tr>
+	                <th> Name </th>
+	                <th> Hash </th>
+	                <th> Answer </th>
+	                <th> Time </th>
+	            </tr>
+	            {% for sample in samples %}
+	            <tr>
+	                <td>{{ sample.filename }}</td>
+	                <td>{{ sample.hash }}</td>
+	                <td>{{ sample.answer }}</td>
+	                <td>{{ sample.timestamp }}</td>
+	            </tr>
+	            {% endfor %}
+	        </table>
+</label>

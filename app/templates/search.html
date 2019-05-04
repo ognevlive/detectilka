@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+	<style type="text/css">
+		/*#search_form_input {
+		  float: right;
+		}*/
+	</style>
+
+
+	<h1>Request: </h1>
+		<input type="text" id="search_form_input" value={{ req }}></input>
+
+		<div id="result">
+			{% if samples %}
+				<table>
+					<h3>Found files:</h3>
+					<tr>
+						<th> Name </th>
+						<th> Hash </th>
+						<th> Answer </th>
+						<th> Time </th>
+					</tr>
+					{% for sample in samples %}
+					<tr>
+						<td>{{ sample.filename }}</td>
+						<td>{{ sample.hash }}</td>
+						<td>{{ sample.answer }}</td>
+						<td>{{ sample.timestamp }}</td>
+					</tr>
+					{% endfor %}
+				</table>
+			{% endif %}
+		</div>
+
+
+		<script>
+			$("#search_form_input").keyup(function(){
+				var text = $(this).val().split(' ');
+
+				data = {}
+				for (var i = text.length - 1; i >= 0; i--) {
+ 					if (text[i].indexOf('=') == -1) {
+ 						key = "filename"
+ 						value = text[i]
+ 					}
+ 					else {
+						key = text[i].split('=')[0]
+						value = text[i].split('=')[1]
+					}
+ 					data[key] = value
+ 				}
+
+
+				$.ajax({
+					url: "/search_result",
+					type: "get",
+					data: data,
+					success: function(response) {
+						$("#result").html(response);
+					},
+					error: function(xhr) {
+
+					}
+				});
+			});
+		</script>
+	<hr>
+{% endblock %}
