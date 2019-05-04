@@ -1,0 +1,5 @@
+env
+logs/*
+classificator/docx/bad/*
+classificator/docx/good/*
+uploads/
