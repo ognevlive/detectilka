@@ -33,7 +33,7 @@ def index():
 			save_filename = '%s__%s' % (filename, str(datetime.utcnow()))
 			file.save(os.path.join(app.config['UPLOAD_FOLDER'], save_filename))
 
-			sample = Sample(file_name=filename, owner=current_user)
+			sample = Sample(filename=filename, owner=current_user)
 			db.session.add(sample)
 			db.session.commit()
 
@@ -87,14 +87,73 @@ def register():
 @app.route('/user/<username>')
 @login_required
 def user(username):
-    user = User.query.filter_by(username=username).first_or_404()
-    samples_form = SamplesListForm()
-    for sample in current_user.samples.all():
-    	entry_form = SampleEntryForm()
-    	entry_form.file_name = sample.file_name
-    	entry_form.answer = sample.answer
-    	entry_form.hash = sample.hash
+	user = User.query.filter_by(username=username).first_or_404()
+	samples_form = SamplesListForm()
+	for sample in current_user.samples.all():
+		entry_form = SampleEntryForm()
+		entry_form.filename = sample.filename
+		entry_form.answer = sample.answer
+		entry_form.hash = sample.hash
+		entry_form.timestamp = sample.timestamp
 
-    	samples_form.samples.append_entry(entry_form)
+		samples_form.samples.append_entry(entry_form)
 
-    return render_template('user.html', user=user, samples=samples_form.samples)
+	return render_template('user.html', user=user, samples=samples_form.samples)
+
+
+@app.route('/search', methods=['POST'])
+def search():
+	if request.method == 'POST':
+		req = request.values['req']
+		print req
+		samples_form = SamplesListForm()
+		if req:
+			for sample in Sample.query.all():
+				if sample.filename.lower().find(req) != -1:
+					entry_form = SampleEntryForm()
+					entry_form.filename = sample.filename
+					entry_form.answer = sample.answer
+					entry_form.hash = sample.hash
+					entry_form.timestamp = sample.timestamp
+
+					samples_form.samples.append_entry(entry_form)
+		return render_template('search.html', req=req, samples=samples_form.samples)
+	return render_template('search.html', req=req)
+
+
+@app.route('/search_result', methods=['GET'])
+def search_result():
+	query = { }
+	for req in request.args:
+		param = request.args[req].lower()
+		query.update({req : param})
+
+
+#User.query.order_by(User.username).all()
+	samples_form = SamplesListForm()
+	if req:
+		
+		from datetime import datetime
+
+		if 'hash' in query: h = Sample.hash == query['hash']
+		else: h = Sample.hash.isnot(False)
+
+		if 'filename' in query: f = Sample.filename.contains(query['filename'])
+		else: f = Sample.filename.isnot(False)
+
+		if 'answer' in query: a = Sample.answer.contains(query['answer'])
+		else: a = Sample.answer.isnot(False)
+
+		if 'time' in query: t = Sample.timestamp <= datetime.strptime(query['time'], '%Y-%m-%d')
+		else: t = Sample.timestamp.isnot(False)
+
+		for sample in Sample.query.filter(h & f & a & t).all():
+			entry_form = SampleEntryForm()
+			entry_form.filename = sample.filename
+			entry_form.answer = sample.answer
+			entry_form.hash = sample.hash
+			entry_form.timestamp = sample.timestamp
+
+			samples_form.samples.append_entry(entry_form)
+
+	return render_template('samples.html', req=req, samples=samples_form.samples)

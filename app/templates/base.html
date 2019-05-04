@@ -1,4 +1,17 @@
+
 <html>
+
+<style type="text/css">
+form {
+     display:inline;
+}
+
+#searchInput {
+  float: right;
+}
+
+</style>
+
     <head>
       {% if title %}
       <title>{{ title }}</title>
@@ -7,7 +20,7 @@
       {% endif %}
     </head>
     <body>
-        <div>
+        <div >
             Detectilka:
             <a href="{{ url_for('index') }}">Home</a>
             {% if current_user.is_anonymous %}
@@ -16,17 +29,18 @@
             <a href="{{ url_for('logout') }}">Logout</a>
             {% endif %}
             <a href="{{ url_for('user', username=current_user.username) }}">Profile</a>
+            
+            <form action="/search" method="POST">
+                <input id="searchInput" type="submit" value="Submit">
+                <input id="searchInput" type="text" name="req">
+            </form>
+
         </div>
-        <hr>
-        {% with messages = get_flashed_messages() %}
-        {% if messages %}
-        <ul>
-            {% for message in messages %}
-            <li>{{ message }}</li>
-            {% endfor %}
-        </ul>
-        {% endif %}
-        {% endwith %}
+
+
+    </form>
+       
+
         {% block content %}{% endblock %}
     </body>
 </html>

@@ -30,7 +30,8 @@ class RegistrationForm(FlaskForm):
 
 
 class SampleEntryForm(FlaskForm):
-    file_name = StringField('file_name')
+    timestamp = StringField('timestamp')
+    filename = StringField('filename')
     hash = StringField('hash')
     answer = StringField('answer')
 

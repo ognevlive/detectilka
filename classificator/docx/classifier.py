@@ -85,7 +85,7 @@ def predict(file, sample):
   	if y_pred == 1:
   		sample.answer = 'Malware'
   	else:
-  		sample.answer = 'Safe file'
+  		sample.answer = 'Safe'
 
   	sample.hash = hashlib.md5(open('uploads/' + file,'rb').read()).hexdigest()
 
