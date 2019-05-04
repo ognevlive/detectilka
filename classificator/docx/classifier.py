@@ -77,16 +77,16 @@ def train():
 
 def predict(file, sample):
 	database = root_path + 'temp.csv'
-	createCSV.run_file(file, database)
-	cl = Classifier(database)
-	cl.getXandY()
-  	y_pred = int(model.predict(cl.features))
+	if createCSV.run_file(file, database) == 0:
+		cl = Classifier(database)
+		cl.getXandY()
+	  	y_pred = int(model.predict(cl.features))
 
-  	if y_pred == 1:
-  		sample.answer = 'Malware'
-  	else:
-  		sample.answer = 'Safe'
+	  	if y_pred == 1: sample.answer = 'Malware'
+	  	else:			sample.answer = 'Safe'
 
-  	sample.hash = hashlib.md5(open('uploads/' + file,'rb').read()).hexdigest()
+  		sample.hash = hashlib.md5(open('uploads/' + file,'rb').read()).hexdigest()
+	else:
+		sample.answer = 'Invalid file'
 
   	db.session.commit()

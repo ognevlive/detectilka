@@ -61,12 +61,12 @@ class CollectCharacteristics():
 	def get_tags(self, file, check=0):
 		try:
 			z = zf.ZipFile(file)
-			f = z.open("word/document.xml")
-			tree = ET.parse(f)
-		except:
-			# fix this function
-			self.incorrect_files.append(file)
-			return None
+		except zf.BadZipfile as exception:
+			raise Exception('BadZipFile')
+
+		f = z.open("word/document.xml")
+		tree = ET.parse(f)
+
 		tags = []
 		for elem in tree.iter():
 			tags.append(elem.tag.split('}')[-1])
@@ -83,17 +83,19 @@ class CollectCharacteristics():
 		else:
 			return tags
 
-	def get_characteristics(self):
+	def get_characteristics(self, type='folder'):
 		self.collect_all_tags()
 		i = 1
 		files_len = len(self.good_files)
 		for file in self.good_files:
 			info = []
 			meta_info = self.get_meta(file)
-			tags_info = self.get_tags(file, check=1)
-
-			if tags_info == None:
+			try:
+				tags_info = self.get_tags(file, check=1)
+			except Exception as ex:
+				if type == 'file': return 1
 				continue
+
 			info += meta_info
 			info += tags_info
 
@@ -110,9 +112,12 @@ class CollectCharacteristics():
 		for file in self.bad_files:
 			info = []
 			meta_info = self.get_meta(file)
-			tags_info = self.get_tags(file, check=1)
-			if tags_info == None:
+			try:
+				tags_info = self.get_tags(file, check=1)
+			except Exception as ex:
+				if type == 'file': return 1
 				continue
+
 			info += meta_info
 			info += tags_info
 
@@ -123,16 +128,19 @@ class CollectCharacteristics():
 			self.database.append(info)
 			i += 1
 		print('[!] Success loaded %d malware docx files' % i)
+		return 0
 
 	def collect_all_tags(self):
 		files = self.good_files + self.bad_files
 		files_len = len(files)
 		i = 1
 		for file in files:
-			tags = self.get_tags(file)
-			if tags != None:
-				self.all_tags += tags
-				self.all_tags = list(set(self.all_tags))
+			try:
+				tags = self.get_tags(file, check=1)
+			except Exception as ex:
+				continue
+			self.all_tags += tags
+			self.all_tags = list(set(self.all_tags))
 			i += 1
 
 
@@ -167,7 +175,10 @@ def run_file(file, output):
 
 	database = []
 	collector = CollectCharacteristics([path], [])
-	collector.get_characteristics()
+	if collector.get_characteristics('file') != 0:
+		# Invalid file
+		return 1
+
 	database += collector.database
 
 	template_db = pandas.read_csv(root_path + 'template.csv', encoding='utf-8')
@@ -187,3 +198,4 @@ def run_file(file, output):
 		if col not in db.columns:
 			db[col] = '0'	
 	db.to_csv(output, encoding = 'utf-8')
+	return 0
