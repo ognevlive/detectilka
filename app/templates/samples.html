@@ -6,6 +6,8 @@
 	                <th> Hash </th>
 	                <th> Answer </th>
 	                <th> Time </th>
+	                <th> Status </th>
+	                <th> Owner </th>
 	            </tr>
 	            {% for sample in samples %}
 	            <tr>
@@ -13,6 +15,8 @@
 	                <td>{{ sample.hash }}</td>
 	                <td>{{ sample.answer }}</td>
 	                <td>{{ sample.timestamp }}</td>
+	                <td>{{ sample.status }}</td>
+	                <td>{{ sample.owner }}</td>
 	            </tr>
 	            {% endfor %}
 	        </table>

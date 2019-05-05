@@ -1,5 +1,7 @@
 env
+app.db
 logs/*
 classificator/docx/bad/*
 classificator/docx/good/*
-uploads/
+uploads/*
+migrations/*

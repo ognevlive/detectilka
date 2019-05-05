@@ -9,7 +9,6 @@ from sklearn.metrics import roc_curve, auc
 import numpy as np
 import pandas
 import createCSV
-import hashlib
 
 
 class Classifier:
@@ -84,9 +83,9 @@ def predict(file, sample):
 
 	  	if y_pred == 1: sample.answer = 'Malware'
 	  	else:			sample.answer = 'Safe'
-
-  		sample.hash = hashlib.md5(open('uploads/' + file,'rb').read()).hexdigest()
 	else:
 		sample.answer = 'Invalid file'
+  	
+  	sample.status = 'Checked'
 
   	db.session.commit()

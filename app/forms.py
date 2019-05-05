@@ -34,6 +34,17 @@ class SampleEntryForm(FlaskForm):
     filename = StringField('filename')
     hash = StringField('hash')
     answer = StringField('answer')
+    status = StringField('status')
+    owner = StringField('status')
+
+    def init(self, sample):
+        self.filename = sample.filename
+        self.answer = sample.answer
+        self.hash = sample.hash
+        self.timestamp = sample.timestamp
+        self.status = sample.status
+        self.owner = sample.owner.username
+
 
 class SamplesListForm(FlaskForm):
     title = StringField('title')

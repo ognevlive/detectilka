@@ -9,6 +9,7 @@ from app import db
 from app.forms import RegistrationForm
 from werkzeug.utils import secure_filename
 from datetime import datetime
+from hashlib import md5
 import os
 
 import sys
@@ -29,13 +30,22 @@ def index():
 	if request.method == 'POST':
 		file = request.files['file']
 		if file:# and allowed_file(file.filename):
+			if request.form.get('isAnon'):
+				owner = User.query.filter_by(username="Anonym").first()
+			else:
+				owner = current_user
+
 			filename = file.filename
 			filename_secure = secure_filename(file.filename)
 			filename_saved  = '%s__%s' % (filename_secure, str(datetime.utcnow()))
 
 			file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename_saved))
 
-			sample = Sample(filename=filename, owner=current_user)
+			sample = Sample(filename=filename, owner=owner, status='Analyzed')
+			sample.hash = md5(open('uploads/' + filename_saved,'rb').read()).hexdigest()
+
+
+
 			db.session.add(sample)
 			db.session.commit()
 
@@ -93,11 +103,7 @@ def user(username):
 	samples_form = SamplesListForm()
 	for sample in current_user.samples.all():
 		entry_form = SampleEntryForm()
-		entry_form.filename = sample.filename
-		entry_form.answer = sample.answer
-		entry_form.hash = sample.hash
-		entry_form.timestamp = sample.timestamp
-
+		entry_form.init(sample)
 		samples_form.samples.append_entry(entry_form)
 
 	return render_template('user.html', user=user, samples=samples_form.samples)
@@ -110,10 +116,7 @@ def search():
 		samples_form = SamplesListForm()
 		for sample in Sample.query.filter(Sample.filename.contains(req)).all():
 			entry_form = SampleEntryForm()
-			entry_form.filename = sample.filename
-			entry_form.answer = sample.answer
-			entry_form.hash = sample.hash
-			entry_form.timestamp = sample.timestamp
+			entry_form.init(sample)
 			samples_form.samples.append_entry(entry_form)
 		return render_template('search.html', req=req, samples=samples_form.samples)
 	return render_template('search.html', req=req)
@@ -150,11 +153,22 @@ def parseSearchArgs(args):
 
 	for sample in Sample.query.filter(h & f & a & t).all():
 		entry_form = SampleEntryForm()
-		entry_form.filename = sample.filename
-		entry_form.answer = sample.answer
-		entry_form.hash = sample.hash
-		entry_form.timestamp = sample.timestamp
+		entry_form.init(sample)	
 
 		samples_form.samples.append_entry(entry_form)
 
 	return samples_form.samples
+
+
+
+@app.route('/report/<id>', methods=['GET'])
+def report(id):
+	sample = Sample.query.filter_by(id=id).first_or_404()
+
+	entry_form = SampleEntryForm()
+	entry_form.init(sample)
+	
+	samples_form = SamplesListForm()
+	samples_form.samples.append_entry(entry_form)
+
+	return render_template('report.html', samples=samples_form.samples)
