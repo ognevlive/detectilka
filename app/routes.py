@@ -33,7 +33,7 @@ def index():
 			if request.form.get('isAnon'):
 				owner = User.query.filter_by(username="Anonym").first()
 			else:
-				owner = current_user
+				owner = anonymous_user
 
 			filename = file.filename
 			filename_secure = secure_filename(file.filename)
