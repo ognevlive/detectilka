@@ -1,46 +1,51 @@
+{% extends 'bootstrap/base.html' %}
 
-<html>
+{% block head %}
+    {{ super() }}
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+{% endblock %}
 
-<style type="text/css">
-form {
-     display:inline;
-}
+{% block title %}
+    {% if title %}{{ title }} - Detectilka{% else %}Welcome to Detectilka{% endif %}
+{% endblock %}
 
-#searchInput {
-  float: right;
-}
-
-</style>
-
-    <head>
-      {% if title %}
-      <title>{{ title }}</title>
-      {% else %}
-      <title>Detectilka</title>
-      {% endif %}
-    </head>
-    <body>
-        <div >
-            Detectilka:
-            <a href="{{ url_for('index') }}">Home</a>
-            {% if current_user.is_anonymous %}
-            <a href="{{ url_for('login') }}">Login</a>
-            {% else %}
-            <a href="{{ url_for('logout') }}">Logout</a>
-            {% endif %}
-            <a href="{{ url_for('user', username=current_user.username) }}">Profile</a>
-            
-            <form action="/search" method="POST">
-                <input id="searchInput" type="submit" value="Submit">
-                <input id="searchInput" type="text" name="req">
-            </form>
-
+{% block navbar %}
+    <nav class="navbar navbar-default">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="{{ url_for('index') }}">Detectilka</a>
+            </div>
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav navbar-left">
+                    <li><a href="{{ url_for('index') }}">Some</a></li>
+                </ul>
+                <ul class="nav navbar-right navbar-form">
+                    <form action="/search" method="POST">
+                        <input type="text" name="req" placeholder="search file">
+                        <input type="submit" value="Search">
+                    </form>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    {% if current_user.is_anonymous %}
+                    <li><a href="{{ url_for('login') }}">Login</a></li>
+                    {% else %}
+                    <li><a href="{{ url_for('user', username=current_user.username) }}">{{current_user.username}}</a></li>
+                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                    {% endif %}
+                </ul>
+            </div>
         </div>
+    </nav>
+{% endblock %}
 
-
-    </form>
-       
-
-        {% block content %}{% endblock %}
-    </body>
-</html>
+{% block content %}
+    <div class="container">
+        {% block app_content %}{% endblock %}
+    </div>
+{% endblock %}

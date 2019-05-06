@@ -29,6 +29,18 @@ class RegistrationForm(FlaskForm):
             raise ValidationError('Please use a different email address.')
 
 
+class ResetPasswordRequestForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    submit = SubmitField('Send')
+
+
+class ResetPasswordForm(FlaskForm):
+    password = PasswordField('Password', validators=[DataRequired()])
+    password2 = PasswordField(
+        'Repeat Password', validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField('Reset')
+
+
 class SampleEntryForm(FlaskForm):
     timestamp = StringField('timestamp')
     filename = StringField('filename')
@@ -44,7 +56,6 @@ class SampleEntryForm(FlaskForm):
         self.timestamp = sample.timestamp
         self.status = sample.status
         self.owner = sample.owner.username
-
 
 class SamplesListForm(FlaskForm):
     title = StringField('title')
