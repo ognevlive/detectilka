@@ -31,7 +31,7 @@ def index():
 			if request.form.get('isAnon'):
 				owner = User.query.filter_by(username="Anonym").first()
 			else:
-				owner = anonymous_user
+				owner = current_user
 
 			filename = file.filename
 			filename_secure = secure_filename(file.filename)
@@ -130,14 +130,10 @@ def user(username):
 	samples_form = SamplesListForm()
 	for sample in current_user.samples.all():
 		entry_form = SampleEntryForm()
-		entry_form.filename = sample.filename
-		entry_form.answer = sample.answer
-		entry_form.hash = sample.hash
-		entry_form.timestamp = sample.timestamp
-
+		entry_form.init(sample)
 		samples_form.samples.append_entry(entry_form)
 
-	return render_template('user.html', title='Profile', user=user, samples=samples_form.samples)
+	return render_template('user.html', user=user, samples=samples_form.samples)
 
 
 @app.route('/search', methods=['POST'])
@@ -145,52 +141,59 @@ def search():
 	if request.method == 'POST':
 		req = request.values['req']
 		samples_form = SamplesListForm()
-		if req:
-			for sample in Sample.query.all():
-				if sample.filename.lower().find(req) != -1:
-					entry_form = SampleEntryForm()
-					entry_form.filename = sample.filename
-					entry_form.answer = sample.answer
-					entry_form.hash = sample.hash
-					entry_form.timestamp = sample.timestamp
-
-					samples_form.samples.append_entry(entry_form)
+		for sample in Sample.query.filter(Sample.filename.contains(req)).all():
+			entry_form = SampleEntryForm()
+			entry_form.init(sample)
+			samples_form.samples.append_entry(entry_form)
 		return render_template('search.html', req=req, samples=samples_form.samples)
-	return render_template('search.html', title='Search', req=req)
+	return render_template('search.html', req=req)
 
 
 @app.route('/search_result', methods=['GET'])
 def search_result():
+	samples = parseSearchArgs(request.args)
+	return render_template('samples.html', samples=samples)
+
+def parseSearchArgs(args):
 	query = { }
-	for req in request.args:
-		param = request.args[req].lower()
+	for req in args:
+		param = args[req].lower()
 		query.update({req : param})
 
-#User.query.order_by(User.username).all()
 	samples_form = SamplesListForm()
-	if req:
-		
-		from datetime import datetime
+	
+	from datetime import datetime
 
-		if 'hash' in query: h = Sample.hash == query['hash']
-		else: h = Sample.hash.isnot(False)
+	if 'hash' in query: h = Sample.hash == query['hash']
+	else: h = Sample.hash.isnot(False)
 
-		if 'filename' in query: f = Sample.filename.contains(query['filename'])
-		else: f = Sample.filename.isnot(False)
+	if 'filename' in query: f = Sample.filename.contains(query['filename'])
+	else: f = Sample.filename.isnot(False)
 
-		if 'answer' in query: a = Sample.answer.contains(query['answer'])
-		else: a = Sample.answer.isnot(False)
+	if 'answer' in query: a = Sample.answer.contains(query['answer'])
+	else: a = Sample.answer.isnot(False)
 
-		if 'time' in query: t = Sample.timestamp <= datetime.strptime(query['time'], '%Y-%m-%d')
-		else: t = Sample.timestamp.isnot(False)
+	if 'time' in query: t = Sample.timestamp <= datetime.strptime(query['time'], '%Y-%m-%d')
+	else: t = Sample.timestamp.isnot(False)
 
-		for sample in Sample.query.filter(h & f & a & t).all():
-			entry_form = SampleEntryForm()
-			entry_form.filename = sample.filename
-			entry_form.answer = sample.answer
-			entry_form.hash = sample.hash
-			entry_form.timestamp = sample.timestamp
+	for sample in Sample.query.filter(h & f & a & t).all():
+		entry_form = SampleEntryForm()
+		entry_form.init(sample)	
 
-			samples_form.samples.append_entry(entry_form)
+		samples_form.samples.append_entry(entry_form)
 
-	return render_template('samples.html', req=req, samples=samples_form.samples)
+	return samples_form.samples
+
+
+
+@app.route('/report/<id>', methods=['GET'])
+def report(id):
+	sample = Sample.query.filter_by(id=id).first_or_404()
+
+	entry_form = SampleEntryForm()
+	entry_form.init(sample)
+	
+	samples_form = SamplesListForm()
+	samples_form.samples.append_entry(entry_form)
+
+	return render_template('report.html', samples=samples_form.samples)
