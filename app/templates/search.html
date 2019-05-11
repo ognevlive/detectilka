@@ -31,9 +31,10 @@
 						</tr>
 					{% endfor %}
 				</table>
+			{% else %}
+				<h2>No such files</h2>
 			{% endif %}
 		</div>
-
 
 		<script>
 			$("#search_form_input").keyup(function(){

@@ -1,5 +1,15 @@
 {% extends "base.html" %}
 
+{%block login %}
+	{% if username %}
+		<li><a href="{{ url_for('user', username=username) }}">{{username}}</a></li>
+		<li><a href="{{ url_for('logout') }}">Logout</a></li>
+	{% else %}
+	<li>{{username}}</li>
+		<li><a href="{{ url_for('login') }}">Login</a></li>
+	{% endif %}
+{% endblock %}
+
 {% block app_content %}
 	<div>
 		<h4>Upload file</h4>

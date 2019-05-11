@@ -5,6 +5,14 @@ from flask_migrate import Migrate
 from flask_login import LoginManager
 from logging.handlers import RotatingFileHandler
 from flask_bootstrap import Bootstrap
+from flask_jwt_extended import (
+    JWTManager, jwt_required, create_access_token,
+    jwt_refresh_token_required, create_refresh_token,
+    get_jwt_identity, set_access_cookies,
+    set_refresh_cookies, unset_jwt_cookies
+)  
+from flask_bcrypt import Bcrypt
+
 import logging
 import os
 
@@ -23,12 +31,18 @@ bootstrap = Bootstrap(app)
 
 mail = Mail(app)
 
-from app import routes, models, errors, api
+jwt = JWTManager(app)
+flask_bcrypt = Bcrypt(app)
+
+from app import routes, auth, models, errors, api
 
 import sys
 sys.path.insert(0, 'classificator/docx')
 import docx 
 docx.classifier.train()
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0')
 
 # from app.models import User
 

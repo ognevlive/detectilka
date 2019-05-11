@@ -1,23 +1,29 @@
-<label id="value_lable">
-	   <table>
-			    <h3>Found files:</h3>
-	            <tr>
-	                <th> Name </th>
-	                <th> Hash </th>
-	                <th> Answer </th>
-	                <th> Time </th>
-	                <th> Status </th>
-	                <th> Owner </th>
-	            </tr>
-	            {% for sample in samples %}
-	            <tr>
-	                <td>{{ sample.filename }}</td>
-	                <td>{{ sample.hash }}</td>
-	                <td>{{ sample.answer }}</td>
-	                <td>{{ sample.timestamp }}</td>
-	                <td>{{ sample.status }}</td>
-	                <td>{{ sample.owner }}</td>
-	            </tr>
-	            {% endfor %}
-	        </table>
-</label>
+<div id="result">
+	{% if samples %}
+		<table class="table table-bordered table-striped">
+			<h3>Found files:</h3>
+			<thead>
+				<tr>
+					<th scope="col"> Name </th>
+					<th scope="col"> Hash </th>
+					<th scope="col"> Answer </th>
+					<th scope="col"> Time </th>
+					<th scope="col"> Status </th>
+					<th scope="col"> Owner </th>
+				</tr>
+			</thead>
+			{% for sample in samples %}
+				<tr>
+					<td>{{ sample.filename }}</td>
+					<td>{{ sample.hash }}</td>
+					<td>{{ sample.answer }}</td>
+					<td>{{ sample.timestamp }}</td>
+					<td>{{ sample.status }}</td>
+					<td>{{ sample.owner }}</td>
+				</tr>
+			{% endfor %}
+		</table>
+	{% else %}
+		<h2>No such files</h2>
+	{% endif %}
+</div>
