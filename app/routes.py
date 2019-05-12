@@ -1,7 +1,7 @@
 from flask import render_template, flash, redirect, url_for, request, jsonify, make_response
 #from flask_login import current_user, login_user, logout_user, login_required
 from app import app, db, jwt, auth
-from app.models import User, Sample
+from app.models import User, Sample, PrivateInfo
 from app.email import send_password_reset_email
 from app.forms import LoginForm, SamplesListForm, SampleEntryForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm
 from werkzeug.urls import url_parse
@@ -14,7 +14,7 @@ from flask_jwt_extended import (
 	get_jwt_identity, set_access_cookies,
 	set_refresh_cookies, unset_jwt_cookies
 )  
-from auth import checkTokensLifetime
+from auth import checkTokensLifetime, checkCredentials, logout
 
 import json
 import os
@@ -22,31 +22,20 @@ import sys
 sys.path.insert(0, 'classificator/docx')
 import docx 
 
-
-
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/upload/', methods=['GET', 'POST'])
 @app.route('/upload', methods=['GET', 'POST'])
 def index():
-	access_token = request.cookies['access_token_cookie']
-	current_user = User.query.filter_by(access_token=access_token).first()
+	current_user = checkCredentials()
 	if current_user == None:
-		return redirect(url_for('login'))
-	checkTokensLifetime()
+		return logout()
 
 	if request.method == 'POST':
 		file = request.files['file']
 		if file:
-			filename = file.filename
-			filename_secure = secure_filename(file.filename)
-			filename_saved  = '%s__%s' % (filename_secure, str(datetime.utcnow()))
-
-			file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename_saved))
-
-			sample = Sample(filename=filename, owner=current_user, status='Analyzed')
-			sample.hash = md5(open('uploads/' + filename_saved,'rb').read()).hexdigest()
-			if request.form.get('isAnon'):
-				sample.is_anon = True
+			sample = Sample(filename=file.filename, status='Analyzed', owner=current_user)
+			filename_saved = sample.saveFile(file)
+			sample.is_anon = request.form.get('isAnon') == 'on'
 
 			db.session.add(sample)
 			db.session.commit()
@@ -90,11 +79,9 @@ def reset_password(token):
 
 @app.route('/user/<username>')
 def user(username):
-	access_token = request.cookies['access_token_cookie']
-	current_user = User.query.filter_by(access_token=access_token).first()
+	current_user = checkCredentials()
 	if current_user == None:
 		return redirect(url_for('login'))
-	checkTokensLifetime()
 
 	if current_user.username != username:
 		 render_template('404.html'), 404
@@ -111,7 +98,10 @@ def user(username):
 
 @app.route('/search', methods=['POST'])
 def search():
-	checkTokensLifetime()
+	current_user = checkCredentials()
+	if current_user == None:
+		return redirect(url_for('login'))
+
 	if request.method == 'POST':
 		req = request.values['req']
 		samples_form = SamplesListForm()
@@ -125,7 +115,10 @@ def search():
 
 @app.route('/search_result', methods=['GET'])
 def search_result():
-	checkTokensLifetime()
+	current_user = checkCredentials()
+	if current_user == None:
+		return redirect(url_for('login'))
+
 	samples = parseSearchArgs(request.args)
 	return render_template('samples.html', samples=samples)
 
@@ -165,7 +158,10 @@ def parseSearchArgs(args):
 
 @app.route('/report/<id>', methods=['GET'])
 def report(id):
-	checkTokensLifetime()
+	current_user = checkCredentials()
+	if current_user == None:
+		return redirect(url_for('login'))
+
 	sample = Sample.query.filter_by(id=id).first_or_404()
 
 	entry_form = SampleEntryForm()

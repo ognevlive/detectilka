@@ -10,7 +10,7 @@ import json
 import sys
 sys.path.insert(0, 'classificator/docx')
 import docx 
-from app.auth import auth_register, auth_login, auth_logout, auth_refresh
+from app.auth import auth_register, auth_login, auth_logout, auth_refresh, checkCredentials
 
 def invalidResp(msg):
 	invalid_resp = {
@@ -23,8 +23,7 @@ def invalidResp(msg):
 #curl -v -F 'file=@testfiile3.doc' http://localhost:5000/api/upload --cookie "access_token_cookie=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2N2RiZDFiMi1iNzVhLTRmNWYtODAwYS1lNzAzYmUzYTViMWMiLCJleHAiOjE1NTc1ODE2NDgsImZyZXNoIjpmYWxzZSwiaWF0IjoxNTU3NTgwNzQ4LCJ0eXBlIjoiYWNjZXNzIiwibmJmIjoxNTU3NTgwNzQ4LCJpZGVudGl0eSI6IkpvaG55In0.kxkWZ3rgk67NQliPwomBcoc6hsYOwftaBJQ6m0Bxb4w"
 @app.route('/api/upload', methods=["POST"])
 def api_upload():
-	access_token = request.cookies['access_token_cookie']
-	current_user = User.query.filter_by(access_token=access_token).first()
+	current_user = checkCredentials()
 	if current_user == None:
 		return invalidResp('bad credentials'), 404
 
@@ -60,8 +59,7 @@ def api_report(id):
 
 	user = sample.owner
 	access_token = request.cookies['access_token_cookie']
-	if  user == None or \
-		user.validateAccessToken(access_token) == False:
+	if user.access_token != access_token:
 		return invalidResp('access denied'), 404
 
 	repsonse = { 
@@ -75,7 +73,6 @@ def api_report(id):
 	}
 
 	return jsonify(repsonse), 200
-
 
 
 @app.route('/api/register', methods=["POST"])
@@ -96,7 +93,7 @@ def api_login():
 @app.route('/api/refresh', methods=["POST"])
 def api_refresh():
 	refresh_token = request.cookies['refresh_token_cookie']
-	current_user = User.query.filter_by(refresh_token=refresh_token).first()
+	current_user = PrivateInfo.query.filter_by(refresh_token=refresh_token).first().owner()
 	if current_user == None:
 		return invalidResp('bad credentials'), 404
 
@@ -106,7 +103,7 @@ def api_refresh():
 @app.route('/api/logout', methods=["POST"])
 def api_logout():
 	refresh_token = request.cookies['refresh_token_cookie']
-	current_user = User.query.filter_by(refresh_token=refresh_token).first()
+	current_user = PrivateInfo.query.filter_by(refresh_token=refresh_token).first().owner()
 	if current_user == None:
 		return invalidResp('bad credentials'), 404
 

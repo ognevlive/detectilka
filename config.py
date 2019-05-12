@@ -12,3 +12,4 @@ class Config(object):
 	JWT_SECRET_KEY = '55555'
 	JWT_TOKEN_LOCATION = 'cookies'
 	JWT_COOKIE_CSRF_PROTECT = False
+	JWT_SESSION_COOKIE = False

@@ -1,6 +1,6 @@
 from flask import render_template, flash, redirect, url_for, request, jsonify, make_response
 from app import app, db, jwt
-from app.models import User
+from app.models import User, PrivateInfo
 from app.forms import LoginForm, RegistrationForm
 from datetime import datetime
 from flask_jwt_extended import (
@@ -9,6 +9,25 @@ from flask_jwt_extended import (
 	get_jwt_identity, set_access_cookies,
 	set_refresh_cookies, unset_jwt_cookies, decode_token
 )  
+
+def checkCredentials():
+	try:
+		access_token = request.cookies['access_token_cookie']
+		refresh_token = request.cookies['refresh_token_cookie']
+	except KeyError:
+		return None
+		
+	checkTokensLifetime()
+	
+	ua = request.user_agent
+	pi = PrivateInfo.query.filter_by(refresh_token=refresh_token).first()
+	if pi.platform != ua.platform or \
+	   pi.browser  != ua.browser  or \
+	   pi.language != request.accept_languages[0][0]:
+	   return None
+
+	current_user = User.query.filter_by(access_token=access_token).first()
+	return current_user
 
 def invalidResp(msg):
 	invalid_resp = {
@@ -23,56 +42,54 @@ def checkTokensLifetime():
 	refresh_token = request.cookies['refresh_token_cookie']
 
 	raw_refresh_token = decode_token(refresh_token, allow_expired=True)
-	exp_time = datetime.utcfromtimestamp(raw_refresh_token['exp'])#.strftime('%Y-%m-%d %H:%M:%S')
+	exp_time = datetime.utcfromtimestamp(raw_refresh_token['exp'])
 	if exp_time < datetime.utcnow():
-		resp, status = auth_logout(current_user.username, resp)
+		resp, status = auth_logout(current_user.username)
 		if status == 201:
 			return resp, 201
 		else:
 			return redirect(url_for('login'))
 
 	raw_access_token = decode_token(access_token, allow_expired=True)
-	exp_time = datetime.utcfromtimestamp(raw_access_token['exp'])#.strftime('%Y-%m-%d %H:%M:%S')
+	exp_time = datetime.utcfromtimestamp(raw_access_token['exp'])
 	if exp_time < datetime.utcnow():
-		resp = make_response(redirect(request.path))
+		resp = make_response(redirect(request.path, code=302))
 		resp, status = auth_refresh(current_user.username, resp)
 		if status == 201:
-			return resp, 201
+			return resp, 302
 		else:
 			return redirect(url_for('login'))
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-	access_token = request.cookies['access_token_cookie']
-	current_user = User.query.filter_by(access_token=access_token).first()
+	current_user = checkCredentials()
 	if current_user != None:
-		return redirect(url_for('index'))
+		return redirect(url_for('login'))
 
 	form = LoginForm()
 	if request.method == 'POST':
-		resp = make_response(redirect(url_for('index')))
+		resp = make_response(redirect(url_for('index'), code=302))
 		resp, status = auth_login(form.username.data, form.password.data, resp)
 		if status == 201:
-			return resp, 201
+			return resp, 302
 		else:
 			flash('invalid credentials')
-			return redirect(url_for('login'))
+			return redirect(url_for('login'), code=302)
 	else:
 		return render_template('login.html', title='Sign In', form=form)
 
 
 @app.route('/logout')
 def logout():
-	access_token = request.cookies['access_token_cookie']
-	current_user = User.query.filter_by(access_token=access_token).first()
+	current_user = checkCredentials()
 	if current_user == None:
 		return redirect(url_for('login'))
 
-	resp = make_response(redirect(url_for('login')))
+	resp = make_response(redirect(url_for('login'), code=302))
 	resp, status = auth_logout(current_user.username, resp)
 	if status == 201:
-		return resp, 201
+		return resp, 302
 	else:
 		return redirect(url_for('login'))
 
@@ -88,7 +105,7 @@ def register():
 	return render_template('register.html', title='Register', form=form)
 
 
-@app.route('/auth_register', methods=['POST'])
+#@app.route('/auth_register', methods=['POST'])
 def auth_register(username, email, password):
 	exists = db.session.query(User.id).filter_by(username=username).scalar() is not None or \
 			 db.session.query(User.id).filter_by(email=email).scalar() is not None
@@ -98,25 +115,17 @@ def auth_register(username, email, password):
 	user = User(username=username, email=email)
 	user.set_password(password)
 
-	access_token = create_access_token(identity = username)
-	refresh_token = create_refresh_token(identity = username)
-
-	user.access_token = access_token
-	user.refresh_token = refresh_token
-
 	db.session.add(user)
 	db.session.commit()
 
 	resp = {
 		'status': 'success',
-		'message': 'Successfully registered.',
-		'access_token': access_token, 
-		'refresh_token': refresh_token
+		'message': 'Successfully registered.'
 	}
 	return jsonify(resp), 201
 
 
-@app.route('/auth_login', methods=['POST'])
+#@app.route('/auth_login', methods=['POST'])
 def auth_login(username, password, resp=None):
 	user = User.query.filter_by(username=username).first()
 	if user is None or not user.check_password(password):
@@ -127,15 +136,16 @@ def auth_login(username, password, resp=None):
 	refresh_token = create_refresh_token(identity=username)
 
 	user.access_token = access_token
-	user.refresh_token = refresh_token
 
+	ua = request.user_agent
+	info = PrivateInfo(refresh_token=refresh_token, owner=user, platform=ua.platform, browser=ua.browser, language=request.accept_languages[0][0])
+	
 	db.session.commit()
 
 	if resp == None:
 		resp = jsonify({
 			'status': 'success',
 			'message': 'Login was successful',
-			'access_token': access_token, 
 			'refresh_token': refresh_token
 		})
 
@@ -144,14 +154,16 @@ def auth_login(username, password, resp=None):
 	return resp, 201
 
 
-@app.route('/auth_logout', methods=['POST'])
+#@app.route('/auth_logout', methods=['POST'])
 def auth_logout(username, resp=None):
 	current_user = User.query.filter_by(username=username).first()
 	if current_user is None:
 		if resp == None: return invalidResp('invalid credentials'), 409
 		else:            return resp, 401
 
-	current_user.refresh_token = ''
+	refresh_token = request.cookies['refresh_token_cookie']
+	PrivateInfo.query.filter_by(refresh_token=refresh_token).delete()
+	
 	current_user.access_token  = ''
 	db.session.commit()
 
@@ -166,7 +178,7 @@ def auth_logout(username, resp=None):
 	return resp, 201
 
 
-@app.route('/auth_refresh', methods=['POST'])
+#@app.route('/auth_refresh', methods=['POST'])
 def auth_refresh(username, resp=None):
 	current_user = User.query.filter_by(username=username).first()
 	if current_user is None:
