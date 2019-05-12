@@ -40,6 +40,7 @@ def invalidResp(msg):
 def checkTokensLifetime():
 	access_token = request.cookies['access_token_cookie']
 	refresh_token = request.cookies['refresh_token_cookie']
+	current_user = User.query.filter_by(access_token=access_token).first()
 
 	raw_refresh_token = decode_token(refresh_token, allow_expired=True)
 	exp_time = datetime.utcfromtimestamp(raw_refresh_token['exp'])
