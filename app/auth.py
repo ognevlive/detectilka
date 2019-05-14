@@ -148,6 +148,7 @@ def auth_login(username, password, resp=None):
 			'status': 'success',
 			'message': 'Login was successful',
 			'refresh_token': refresh_token
+			'access_token' : access_token
 		})
 
 	set_access_cookies(resp, access_token)
