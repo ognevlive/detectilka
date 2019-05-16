@@ -1,7 +1,7 @@
 from flask import jsonify, request, flash
 from werkzeug.utils import secure_filename
 from app import app, db
-from app.models import User, Sample
+from app.models import User, Sample, PrivateInfo
 from datetime import datetime
 from hashlib import md5
 import os
@@ -92,8 +92,12 @@ def api_login():
 
 @app.route('/api/refresh', methods=["POST"])
 def api_refresh():
-	refresh_token = request.cookies['refresh_token_cookie']
-	current_user = PrivateInfo.query.filter_by(refresh_token=refresh_token).first().owner()
+	try:
+		refresh_token = request.cookies['refresh_token_cookie']
+	except:
+		return invalidResp('bad credentials'), 405
+
+	current_user = PrivateInfo.query.filter_by(refresh_token=refresh_token).first().owner
 	if current_user == None:
 		return invalidResp('bad credentials'), 404
 
@@ -102,9 +106,29 @@ def api_refresh():
 
 @app.route('/api/logout', methods=["POST"])
 def api_logout():
-	refresh_token = request.cookies['refresh_token_cookie']
-	current_user = PrivateInfo.query.filter_by(refresh_token=refresh_token).first().owner()
+	try: 
+		refresh_token = request.cookies['refresh_token_cookie']
+	except:
+		return invalidResp('bad credentials'), 405
+
+	current_user = PrivateInfo.query.filter_by(refresh_token=refresh_token).first().owner
 	if current_user == None:
 		return invalidResp('bad credentials'), 404
 
 	return auth_logout(current_user.username)
+
+
+
+@app.route('/api/reports', methods=["GET"])
+def api_reports():
+    try:
+            access_token = request.cookies['access_token_cookie']
+    except:
+            return invalidResp('bad credentials'), 404
+    user = User.query.filter_by(access_token=access_token).first()
+    if user == None:
+            return invalidResp('bad credentials'), 404
+    reports = { }
+    for sample in user.samples.all():
+            reports.update({str(sample.id) : {'name' : sample.filename, 'answer' : sample.answer}})
+    return jsonify(reports), 200

@@ -2,8 +2,12 @@ alembic==1.0.10
 Click==7.0
 dominate==2.3.5
 Flask==1.0.2
+Flask-Bcrypt==0.7.1
 Flask-Bootstrap==3.3.7.1
+Flask-JWT==0.3.2
+Flask-JWT-Extended==3.18.1
 Flask-Login==0.4.1
+Flask-Mail==0.9.1
 Flask-Migrate==2.4.0
 Flask-SQLAlchemy==2.4.0
 Flask-WTF==0.14.2

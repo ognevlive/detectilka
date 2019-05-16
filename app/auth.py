@@ -42,6 +42,9 @@ def checkTokensLifetime():
 	refresh_token = request.cookies['refresh_token_cookie']
 	current_user = User.query.filter_by(access_token=access_token).first()
 
+	if current_user == None:
+		return redirect(url_for('login'))
+
 	raw_refresh_token = decode_token(refresh_token, allow_expired=True)
 	exp_time = datetime.utcfromtimestamp(raw_refresh_token['exp'])
 	if exp_time < datetime.utcnow():
@@ -64,9 +67,9 @@ def checkTokensLifetime():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-	current_user = checkCredentials()
-	if current_user != None:
-		return redirect(url_for('login'))
+	# current_user = checkCredentials()
+	# if current_user != None:
+	# 	return redirect(url_for('login'))
 
 	form = LoginForm()
 	if request.method == 'POST':
@@ -147,8 +150,8 @@ def auth_login(username, password, resp=None):
 		resp = jsonify({
 			'status': 'success',
 			'message': 'Login was successful',
-			'refresh_token': refresh_token
-			'access_token' : access_token
+			'refresh_token': refresh_token,
+			'access_token': access_token
 		})
 
 	set_access_cookies(resp, access_token)
