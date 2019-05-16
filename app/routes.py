@@ -123,14 +123,17 @@ def search_result():
 	return render_template('samples.html', samples=samples)
 
 
-def parseSearchArgs(args):
+def parseSearchArgs(args, api=None):
 	query = { }
 	for req in args:
 		param = args[req].lower()
 		query.update({req : param})
 
-	samples_form = SamplesListForm()
-	
+	if api == None:
+		samples_form = SamplesListForm()
+	else:
+		samples = {}
+
 	from datetime import datetime
 
 	if 'hash' in query: h = Sample.hash == query['hash']
@@ -148,12 +151,23 @@ def parseSearchArgs(args):
 	anon = Sample.is_anon == False
 
 	for sample in Sample.query.filter(h & f & a & t & anon).all():
-		entry_form = SampleEntryForm()
-		entry_form.init(sample)	
+		if api == None:
+			entry_form = SampleEntryForm()
+			entry_form.init(sample)	
+			samples_form.samples.append_entry(entry_form)
 
-		samples_form.samples.append_entry(entry_form)
+		else:
+			samples.update({sample.filename : {
+				'answer' : sample.answer,
+				'time'   : sample.timestamp,
+				'status' : sample.status,
+				'owner'  : sample.owner.username
+				}})
 
-	return samples_form.samples
+	if api == None:
+		return samples_form.samples
+	else:
+		return samples
 
 
 @app.route('/report/<id>', methods=['GET'])

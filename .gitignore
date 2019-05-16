@@ -1,4 +1,4 @@
-env
+env/
 app.db
 logs/*
 classificator/docx/bad/*

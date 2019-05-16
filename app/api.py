@@ -2,6 +2,7 @@ from flask import jsonify, request, flash
 from werkzeug.utils import secure_filename
 from app import app, db
 from app.models import User, Sample, PrivateInfo
+from app.routes import parseSearchArgs
 from datetime import datetime
 from hashlib import md5
 import os
@@ -97,11 +98,11 @@ def api_refresh():
 	except:
 		return invalidResp('bad credentials'), 405
 
-	current_user = PrivateInfo.query.filter_by(refresh_token=refresh_token).first().owner
-	if current_user == None:
+	sample = PrivateInfo.query.filter_by(refresh_token=refresh_token).first()
+	if sample == None:
 		return invalidResp('bad credentials'), 404
 
-	return auth_refresh(current_user.username)
+	return auth_refresh(sample.owner.username)
 
 
 @app.route('/api/logout', methods=["POST"])
@@ -111,11 +112,11 @@ def api_logout():
 	except:
 		return invalidResp('bad credentials'), 405
 
-	current_user = PrivateInfo.query.filter_by(refresh_token=refresh_token).first().owner
-	if current_user == None:
+	sample = PrivateInfo.query.filter_by(refresh_token=refresh_token).first()
+	if sample == None:
 		return invalidResp('bad credentials'), 404
 
-	return auth_logout(current_user.username)
+	return auth_logout(sample.owner.username)
 
 
 
@@ -128,7 +129,23 @@ def api_reports():
     user = User.query.filter_by(access_token=access_token).first()
     if user == None:
             return invalidResp('bad credentials'), 404
+
     reports = { }
     for sample in user.samples.all():
             reports.update({str(sample.id) : {'name' : sample.filename, 'answer' : sample.answer}})
     return jsonify(reports), 200
+
+
+@app.route('/api/search', methods=["GET"])
+def api_search():
+    try:
+            access_token = request.cookies['access_token_cookie']
+    except:
+            return invalidResp('bad credentials'), 404
+    user = User.query.filter_by(access_token=access_token).first()
+    if user == None:
+            return invalidResp('bad credentials'), 404
+
+    samples = parseSearchArgs(request.json, True)
+
+    return jsonify(samples), 200

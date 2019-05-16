@@ -142,8 +142,24 @@ def auth_login(username, password, resp=None):
 	user.access_token = access_token
 
 	ua = request.user_agent
-	info = PrivateInfo(refresh_token=refresh_token, owner=user, platform=ua.platform, browser=ua.browser, language=request.accept_languages[0][0])
-	
+
+	try:
+		platform = ua.platform
+	except:
+		platform = 'Unknown'
+
+	try:
+		browser = ua.browser
+	except:
+		browser = 'Unknown'
+
+	try:
+		language = request.accept_languages[0][0]
+	except:
+		language = 'Unknown'
+
+	info = PrivateInfo(refresh_token=refresh_token, owner=user, platform=platform, browser=browser, language=language)
+
 	db.session.commit()
 
 	if resp == None:
