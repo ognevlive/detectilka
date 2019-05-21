@@ -34,7 +34,7 @@ mail = Mail(app)
 jwt = JWTManager(app)
 flask_bcrypt = Bcrypt(app)
 
-from app import routes, auth, models, errors, api
+from app import routes, models, errors, api, auth
 
 import sys
 sys.path.insert(0, 'classificator/docx')

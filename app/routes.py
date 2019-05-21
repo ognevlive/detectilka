@@ -1,6 +1,6 @@
 from flask import render_template, flash, redirect, url_for, request, jsonify, make_response
 #from flask_login import current_user, login_user, logout_user, login_required
-from app import app, db, jwt, auth
+from app import app, db, jwt
 from app.models import User, Sample, PrivateInfo
 from app.email import send_password_reset_email
 from app.forms import LoginForm, SamplesListForm, SampleEntryForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm
@@ -12,9 +12,8 @@ from flask_jwt_extended import (
 	JWTManager, jwt_required, create_access_token,
 	jwt_refresh_token_required, create_refresh_token,
 	get_jwt_identity, set_access_cookies,
-	set_refresh_cookies, unset_jwt_cookies
+	set_refresh_cookies, unset_jwt_cookies, decode_token
 )  
-from auth import checkTokensLifetime, checkCredentials, logout
 
 import json
 import os
@@ -22,13 +21,55 @@ import sys
 sys.path.insert(0, 'classificator/docx')
 import docx 
 
+
+def invalidResp(msg):
+	invalid_resp = {
+		'status': 'fail',
+		'message': msg
+	}
+	return jsonify(invalid_resp)
+
+def refreshFoo1():
+	return redirect(url_for('refresh', next=request.endpoint))
+
+def verifyCredentials(refresh=refreshFoo1):
+	try:
+		access_token = request.cookies['access_token_cookie']
+	except KeyError:
+		return refresh()
+		
+	raw_access_token = decode_token(access_token, allow_expired=True)
+	exp_time = datetime.utcfromtimestamp(raw_access_token['exp'])
+	if exp_time < datetime.utcnow():
+		return refresh()
+
+	print raw_access_token
+	
+	try:
+		ua = request.user_agent
+		pi = PrivateInfo.query.filter_by(access_token=access_token).first()
+		if pi == None:
+			return refresh()
+		if pi.platform != ua.platform or \
+		   pi.browser  != ua.browser  or \
+		   pi.language != request.accept_languages[0][0]:
+			return refresh()
+		print pi
+		
+	except:
+		return refresh()
+
+	return True
+
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/upload/', methods=['GET', 'POST'])
 @app.route('/upload', methods=['GET', 'POST'])
 def index():
-	current_user = checkCredentials()
-	if current_user == None:
-		return logout()
+	status = verifyCredentials()
+	if status != True:
+		return status
+
+	current_user = User.query.filter_by(access_token=request.cookies['access_token_cookie']).first()
 
 	if request.method == 'POST':
 		file = request.files['file']
@@ -40,7 +81,6 @@ def index():
 			db.session.add(sample)
 			db.session.commit()
 
-			print 'predict?'
 			docx.classifier.predict(filename_saved, sample)
 
 			flash('File uploaded!')
@@ -79,28 +119,32 @@ def reset_password(token):
 
 @app.route('/user/<username>')
 def user(username):
-	current_user = checkCredentials()
-	if current_user == None:
-		return redirect(url_for('login'))
+	status = verifyCredentials()
+	print status
+	if status != True:
+		return status
+	
+	current_user = User.query.filter_by(access_token=request.cookies['access_token_cookie']).first()
 
 	if current_user.username != username:
 		 render_template('404.html'), 404
 
-	user = User.query.filter_by(username=username).first_or_404()
 	samples_form = SamplesListForm()
 	for sample in current_user.samples.all():
 		entry_form = SampleEntryForm()
 		entry_form.init(sample)
 		samples_form.samples.append_entry(entry_form)
 
-	return render_template('user.html', user=user, samples=samples_form.samples)
+	return render_template('user.html', user=current_user, samples=samples_form.samples)
 
 
 @app.route('/search', methods=['POST'])
 def search():
-	current_user = checkCredentials()
-	if current_user == None:
-		return redirect(url_for('login'))
+	status = verifyCredentials()
+	if status != True:
+		return status
+	
+	current_user = User.query.filter_by(access_token=request.cookies['access_token_cookie']).first()
 
 	if request.method == 'POST':
 		req = request.values['req']
@@ -115,9 +159,11 @@ def search():
 
 @app.route('/search_result', methods=['GET'])
 def search_result():
-	current_user = checkCredentials()
-	if current_user == None:
-		return redirect(url_for('login'))
+	status = verifyCredentials()
+	if status != True:
+		return status
+	
+	current_user = User.query.filter_by(access_token=request.cookies['access_token_cookie']).first()
 
 	samples = parseSearchArgs(request.args)
 	return render_template('samples.html', samples=samples)
@@ -172,9 +218,11 @@ def parseSearchArgs(args, api=None):
 
 @app.route('/report/<id>', methods=['GET'])
 def report(id):
-	current_user = checkCredentials()
-	if current_user == None:
-		return redirect(url_for('login'))
+	status = verifyCredentials()
+	if status != True:
+		return status
+	
+	current_user = User.query.filter_by(access_token=request.cookies['access_token_cookie']).first()
 
 	sample = Sample.query.filter_by(id=id).first_or_404()
 
@@ -185,3 +233,33 @@ def report(id):
 	samples_form.samples.append_entry(entry_form)
 
 	return render_template('report.html', samples=samples_form.samples)
+
+
+@app.route('/refresh', methods=['GET'])
+def refresh(api=False):
+	try:
+		refresh_token = request.cookies['refresh_token_cookie']
+	except KeyError:
+		if not api: return redirect(url_for('login'))
+		else:		return invalidResp('invalid credentials'), 409
+		
+	info = PrivateInfo.query.filter_by(refresh_token=refresh_token).first()
+	if info == None:
+		if not api: return redirect(url_for('login'))
+		else:		return invalidResp('invalid credentials'), 409
+
+	current_user = info.owner
+
+	access_token = create_access_token(identity=current_user.username)
+	current_user.access_token = access_token
+	db.session.commit()
+
+	resp = jsonify({
+			'status': 'success',
+			'message': 'Refresh was successful'
+		})
+
+	set_access_cookies(resp, access_token)
+
+	if not api: return redirect(url_for(request.args.get('next')))
+	else:		return invalidResp('invalid credentials'), 409

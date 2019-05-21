@@ -62,6 +62,7 @@ class PrivateInfo(db.Model):
     language  = db.Column(db.String(64))
     user_id   = db.Column(db.Integer, db.ForeignKey('user.id'))
     refresh_token = db.Column(db.String(256), index=True)
+    access_token = db.Column(db.String(256), index=True)
 
     def __repr__(self):
-        return '<PrivateInfo {}>'.format(self.refresh_token)
+        return '<PrivateInfo {}>'.format(self.access_token)

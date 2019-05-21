@@ -2,6 +2,7 @@ from flask import render_template, flash, redirect, url_for, request, jsonify, m
 from app import app, db, jwt
 from app.models import User, PrivateInfo
 from app.forms import LoginForm, RegistrationForm
+from app.routes import verifyCredentials, invalidResp
 from datetime import datetime
 from flask_jwt_extended import (
 	JWTManager, jwt_required, create_access_token,
@@ -10,71 +11,14 @@ from flask_jwt_extended import (
 	set_refresh_cookies, unset_jwt_cookies, decode_token
 )  
 
-def checkCredentials():
-	try:
-		access_token = request.cookies['access_token_cookie']
-		refresh_token = request.cookies['refresh_token_cookie']
-	except KeyError:
-		return None
-		
-	checkTokensLifetime()
-	
-	ua = request.user_agent
-	pi = PrivateInfo.query.filter_by(refresh_token=refresh_token).first()
-	if pi.platform != ua.platform or \
-	   pi.browser  != ua.browser  or \
-	   pi.language != request.accept_languages[0][0]:
-	   return None
-
-	current_user = User.query.filter_by(access_token=access_token).first()
-	return current_user
-
-def invalidResp(msg):
-	invalid_resp = {
-		'status': 'fail',
-		'message': msg
-	}
-	return jsonify(invalid_resp)
-
-
-def checkTokensLifetime():
-	access_token = request.cookies['access_token_cookie']
-	refresh_token = request.cookies['refresh_token_cookie']
-	current_user = User.query.filter_by(access_token=access_token).first()
-
-	if current_user == None:
-		return redirect(url_for('login'))
-
-	raw_refresh_token = decode_token(refresh_token, allow_expired=True)
-	exp_time = datetime.utcfromtimestamp(raw_refresh_token['exp'])
-	if exp_time < datetime.utcnow():
-		resp, status = auth_logout(current_user.username)
-		if status == 201:
-			return resp, 201
-		else:
-			return redirect(url_for('login'))
-
-	raw_access_token = decode_token(access_token, allow_expired=True)
-	exp_time = datetime.utcfromtimestamp(raw_access_token['exp'])
-	if exp_time < datetime.utcnow():
-		resp = make_response(redirect(request.path, code=302))
-		resp, status = auth_refresh(current_user.username, resp)
-		if status == 201:
-			return resp, 302
-		else:
-			return redirect(url_for('login'))
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-	# current_user = checkCredentials()
-	# if current_user != None:
-	# 	return redirect(url_for('login'))
-
 	form = LoginForm()
 	if request.method == 'POST':
 		resp = make_response(redirect(url_for('index'), code=302))
 		resp, status = auth_login(form.username.data, form.password.data, resp)
+
 		if status == 201:
 			return resp, 302
 		else:
@@ -86,9 +30,10 @@ def login():
 
 @app.route('/logout')
 def logout():
-	current_user = checkCredentials()
-	if current_user == None:
+	if not verifyCredentials():
 		return redirect(url_for('login'))
+
+	current_user = User.query.filter_by(access_token=request.cookies['access_token_cookie']).first()
 
 	resp = make_response(redirect(url_for('login'), code=302))
 	resp, status = auth_logout(current_user.username, resp)
@@ -109,7 +54,6 @@ def register():
 	return render_template('register.html', title='Register', form=form)
 
 
-#@app.route('/auth_register', methods=['POST'])
 def auth_register(username, email, password):
 	exists = db.session.query(User.id).filter_by(username=username).scalar() is not None or \
 			 db.session.query(User.id).filter_by(email=email).scalar() is not None
@@ -129,7 +73,6 @@ def auth_register(username, email, password):
 	return jsonify(resp), 201
 
 
-#@app.route('/auth_login', methods=['POST'])
 def auth_login(username, password, resp=None):
 	user = User.query.filter_by(username=username).first()
 	if user is None or not user.check_password(password):
@@ -140,6 +83,8 @@ def auth_login(username, password, resp=None):
 	refresh_token = create_refresh_token(identity=username)
 
 	user.access_token = access_token
+
+	PrivateInfo.query.filter_by(owner=user).delete()
 
 	ua = request.user_agent
 
@@ -158,7 +103,7 @@ def auth_login(username, password, resp=None):
 	except:
 		language = 'Unknown'
 
-	info = PrivateInfo(refresh_token=refresh_token, owner=user, platform=platform, browser=browser, language=language)
+	info = PrivateInfo(access_token=access_token, refresh_token=refresh_token, owner=user, platform=platform, browser=browser, language=language)
 
 	db.session.commit()
 
@@ -175,17 +120,21 @@ def auth_login(username, password, resp=None):
 	return resp, 201
 
 
-#@app.route('/auth_logout', methods=['POST'])
 def auth_logout(username, resp=None):
 	current_user = User.query.filter_by(username=username).first()
 	if current_user is None:
 		if resp == None: return invalidResp('invalid credentials'), 409
 		else:            return resp, 401
 
-	refresh_token = request.cookies['refresh_token_cookie']
-	PrivateInfo.query.filter_by(refresh_token=refresh_token).delete()
+	# refresh_token = request.cookies['refresh_token_cookie']
+	# info = PrivateInfo.query.filter_by(refresh_token=refresh_token).first()
+	# if current_user != info.owner:
+	# 	if resp == None: return invalidResp('invalid credentials'), 409
+	# 	else:            return resp, 401
+
+	PrivateInfo.query.filter_by(access_token=request.cookies['access_token_cookie']).delete()
 	
-	current_user.access_token  = ''
+	current_user.access_token = ''
 	db.session.commit()
 
 	if resp == None:

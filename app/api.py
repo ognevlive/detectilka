@@ -2,7 +2,7 @@ from flask import jsonify, request, flash
 from werkzeug.utils import secure_filename
 from app import app, db
 from app.models import User, Sample, PrivateInfo
-from app.routes import parseSearchArgs
+from app.routes import parseSearchArgs, verifyCredentials
 from datetime import datetime
 from hashlib import md5
 import os
@@ -11,7 +11,7 @@ import json
 import sys
 sys.path.insert(0, 'classificator/docx')
 import docx 
-from app.auth import auth_register, auth_login, auth_logout, auth_refresh, checkCredentials
+from app.auth import auth_register, auth_login, auth_logout, auth_refresh
 
 def invalidResp(msg):
 	invalid_resp = {
@@ -20,13 +20,18 @@ def invalidResp(msg):
 	}
 	return jsonify(invalid_resp)
 
+def refresh_foo():
+	return invalidResp('bad credentials')
+
 
 #curl -v -F 'file=@testfiile3.doc' http://localhost:5000/api/upload --cookie "access_token_cookie=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2N2RiZDFiMi1iNzVhLTRmNWYtODAwYS1lNzAzYmUzYTViMWMiLCJleHAiOjE1NTc1ODE2NDgsImZyZXNoIjpmYWxzZSwiaWF0IjoxNTU3NTgwNzQ4LCJ0eXBlIjoiYWNjZXNzIiwibmJmIjoxNTU3NTgwNzQ4LCJpZGVudGl0eSI6IkpvaG55In0.kxkWZ3rgk67NQliPwomBcoc6hsYOwftaBJQ6m0Bxb4w"
 @app.route('/api/upload', methods=["POST"])
 def api_upload():
-	current_user = checkCredentials()
-	if current_user == None:
-		return invalidResp('bad credentials'), 404
+	status = verifyCredentials(refresh_foo)
+	if status != True:
+		return status, 404
+
+	current_user = User.query.filter_by(access_token=request.cookies['access_token_cookie']).first()
 
 	if request.files == None:
 		return invalidResp('bad file'), 404
@@ -54,12 +59,18 @@ def api_upload():
 
 @app.route('/api/report/<id>', methods=["GET"])
 def api_report(id):
+	status = verifyCredentials(refresh_foo)
+	if status != True:
+		return status, 404
+
+	access_token = request.cookies['access_token_cookie']
+	current_user = User.query.filter_by(access_token=access_token).first()
+
 	sample = Sample.query.filter_by(id=id).first()
 	if sample == None:
 		return invalidResp('invalid params'), 404
 
 	user = sample.owner
-	access_token = request.cookies['access_token_cookie']
 	if user.access_token != access_token:
 		return invalidResp('access denied'), 404
 
@@ -95,57 +106,60 @@ def api_login():
 def api_refresh():
 	try:
 		refresh_token = request.cookies['refresh_token_cookie']
-	except:
-		return invalidResp('bad credentials'), 405
+	except KeyError:
+		return invalidResp('invalid credentials'), 409
+		
+	info = Info.query.filter_by(refresh_token=refresh_token)
+	if info == None:
+		return invalidResp('invalid credentials'), 409
 
-	sample = PrivateInfo.query.filter_by(refresh_token=refresh_token).first()
-	if sample == None:
-		return invalidResp('bad credentials'), 404
+	current_user = info.owner
 
-	return auth_refresh(sample.owner.username)
+	access_token = create_access_token(identity=current_user.username)
+	current_user.access_token = access_token
+	db.session.commit()
 
+	resp = jsonify({
+			'status': 'success',
+			'message': 'Refresh was successful'
+		})
+
+	set_access_cookies(resp, access_token)
+
+	return resp, 200
+	
 
 @app.route('/api/logout', methods=["POST"])
 def api_logout():
-	try: 
-		refresh_token = request.cookies['refresh_token_cookie']
-	except:
-		return invalidResp('bad credentials'), 405
+	status = verifyCredentials(refresh_foo)
+	if status != True:
+		return status, 404
 
-	sample = PrivateInfo.query.filter_by(refresh_token=refresh_token).first()
-	if sample == None:
-		return invalidResp('bad credentials'), 404
+	user = User.query.filter_by(access_token=request.cookies['access_token_cookie']).first()
 
-	return auth_logout(sample.owner.username)
-
+	return auth_logout(user.username)
 
 
 @app.route('/api/reports', methods=["GET"])
 def api_reports():
-    try:
-            access_token = request.cookies['access_token_cookie']
-    except:
-            return invalidResp('bad credentials'), 404
-    user = User.query.filter_by(access_token=access_token).first()
-    if user == None:
-            return invalidResp('bad credentials'), 404
+	status = verifyCredentials(refresh_foo)
+	if status != True:
+		return status, 404
 
-    reports = { }
-    for sample in user.samples.all():
-            reports.update({str(sample.id) : {'name' : sample.filename, 'answer' : sample.answer}})
-    return jsonify(reports), 200
+	user = User.query.filter_by(access_token=request.cookies['access_token_cookie']).first()
+
+	reports = { }
+	for sample in user.samples.all():
+			reports.update({str(sample.id) : {'name' : sample.filename, 'answer' : sample.answer}})
+	return jsonify(reports), 200
 
 
-@app.route('/api/search', methods=["GET"])
+@app.route('/api/search', methods=["POST"])
 def api_search():
-    try:
-            access_token = request.cookies['access_token_cookie']
-    except:
-            return invalidResp('bad credentials'), 404
-    user = User.query.filter_by(access_token=access_token).first()
-    if user == None:
-            return invalidResp('bad credentials'), 404
+	status = verifyCredentials(refresh_foo)
+	if status != True:
+		return status, 404
 
-    samples = parseSearchArgs(request.json, True)
+	samples = parseSearchArgs(request.json, True)
 
-    return jsonify(samples), 200
+	return jsonify(samples), 200
