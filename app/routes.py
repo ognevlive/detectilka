@@ -12,7 +12,7 @@ from flask_jwt_extended import (
 	JWTManager, jwt_required, create_access_token,
 	jwt_refresh_token_required, create_refresh_token,
 	get_jwt_identity, set_access_cookies,
-	set_refresh_cookies, unset_jwt_cookies, decode_token
+	set_refresh_cookies, unset_jwt_cookies, decode_token, get_csrf_token
 )  
 
 import json
@@ -43,18 +43,16 @@ def verifyCredentials(refresh=refreshFoo1):
 	if exp_time < datetime.utcnow():
 		return refresh()
 
-	print raw_access_token
-	
 	try:
 		ua = request.user_agent
 		pi = PrivateInfo.query.filter_by(access_token=access_token).first()
+		print pi
 		if pi == None:
 			return refresh()
 		if pi.platform != ua.platform or \
 		   pi.browser  != ua.browser  or \
 		   pi.language != request.accept_languages[0][0]:
 			return refresh()
-		print pi
 		
 	except:
 		return refresh()
@@ -72,6 +70,13 @@ def index():
 	current_user = User.query.filter_by(access_token=request.cookies['access_token_cookie']).first()
 
 	if request.method == 'POST':
+
+		if current_user.csrf_access_token != request.values.get('csrf_access_token'):
+			print 'csrf error!'
+			print current_user.csrf_access_token
+			print request.values
+			print request.values.get('csrf_access_token')
+			return redirect(url_for('logout'))
 		file = request.files['file']
 		if file:
 			sample = Sample(filename=file.filename, status='Analyzed', owner=current_user)
@@ -146,15 +151,16 @@ def search():
 	
 	current_user = User.query.filter_by(access_token=request.cookies['access_token_cookie']).first()
 
-	if request.method == 'POST':
-		req = request.values['req']
-		samples_form = SamplesListForm()
-		for sample in Sample.query.filter(Sample.filename.contains(req) & Sample.is_anon == False).all():
-			entry_form = SampleEntryForm()
-			entry_form.init(sample)
-			samples_form.samples.append_entry(entry_form)
-		return render_template('search.html', req=req, samples=samples_form.samples)
-	return render_template('search.html', req=req)
+	if current_user.csrf_access_token != request.values.get('csrf_access_token'):
+		return redirect(url_for('logout'))
+
+	req = request.values['req']
+	samples_form = SamplesListForm()
+	for sample in Sample.query.filter(Sample.filename.contains(req) & (Sample.is_anon == False)).all():
+		entry_form = SampleEntryForm()
+		entry_form.init(sample)
+		samples_form.samples.append_entry(entry_form)
+	return render_template('search.html', req=req, samples=samples_form.samples)
 
 
 @app.route('/search_result', methods=['GET'])
@@ -240,18 +246,19 @@ def refresh(api=False):
 	try:
 		refresh_token = request.cookies['refresh_token_cookie']
 	except KeyError:
-		if not api: return redirect(url_for('login'))
+		if not api: return redirect(url_for('logout'))
 		else:		return invalidResp('invalid credentials'), 409
 		
 	info = PrivateInfo.query.filter_by(refresh_token=refresh_token).first()
 	if info == None:
-		if not api: return redirect(url_for('login'))
+		if not api: return redirect(url_for('logout'))
 		else:		return invalidResp('invalid credentials'), 409
 
 	current_user = info.owner
 
 	access_token = create_access_token(identity=current_user.username)
 	current_user.access_token = access_token
+	current_user.csrf_access_token = get_csrf_token(access_token)
 	db.session.commit()
 
 	resp = jsonify({

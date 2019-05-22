@@ -1,3 +1,4 @@
+from flask_jwt_extended import create_access_token, set_access_cookies
 from flask import jsonify, request, flash
 from werkzeug.utils import secure_filename
 from app import app, db
@@ -107,21 +108,23 @@ def api_refresh():
 	try:
 		refresh_token = request.cookies['refresh_token_cookie']
 	except KeyError:
-		return invalidResp('invalid credentials'), 409
+		return invalidResp('bad credentials'), 409
 		
-	info = Info.query.filter_by(refresh_token=refresh_token)
+	info = PrivateInfo.query.filter_by(refresh_token=refresh_token).first()
 	if info == None:
-		return invalidResp('invalid credentials'), 409
+		return invalidResp('bad credentials'), 409
 
 	current_user = info.owner
 
 	access_token = create_access_token(identity=current_user.username)
 	current_user.access_token = access_token
+	info.access_token = access_token
 	db.session.commit()
 
 	resp = jsonify({
 			'status': 'success',
-			'message': 'Refresh was successful'
+			'message': 'Refresh was successful',
+			'access_token': access_token
 		})
 
 	set_access_cookies(resp, access_token)
@@ -131,10 +134,6 @@ def api_refresh():
 
 @app.route('/api/logout', methods=["POST"])
 def api_logout():
-	status = verifyCredentials(refresh_foo)
-	if status != True:
-		return status, 404
-
 	user = User.query.filter_by(access_token=request.cookies['access_token_cookie']).first()
 
 	return auth_logout(user.username)

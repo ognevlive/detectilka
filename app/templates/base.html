@@ -27,6 +27,16 @@
                 </ul> -->
                 <ul class="nav navbar-right navbar-form">
                     <form action="/search" method="POST">
+
+                        <input type="hidden" id="csrf_access_token" name="csrf_access_token">
+                        <input type="hidden" id="csrf_refresh_token" name="csrf_refresh_token">
+                        <script type="text/javascript">
+                            var csrf_access_token = document.getElementById("csrf_access_token");
+                            csrf_access_token.value = document.cookie.match(/csrf_access_token=([\w-]+)/)[1];
+                            var csrf_refresh_token = document.getElementById("csrf_refresh_token");
+                            csrf_refresh_token.value = document.cookie.match(/csrf_refresh_token=([\w-]+)/)[1];
+                        </script>
+
                         <input type="text" name="req" placeholder="search file">
                         <input type="submit" value="Search">
                     </form>

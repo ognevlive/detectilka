@@ -13,14 +13,24 @@
 {% block app_content %}
 	<div>
 		<h4>Upload file</h4>
-		<form action="" method=post enctype=multipart/form-data>
+		<form action="" method=post enctype=multipart/form-data onsubmit="
+			var csrf_access_token = document.getElementById('csrf2')
+			csrf_access_token.value = document.cookie.match(/csrf_access_token=([\w\d-]+)/)[1];
+
+			var csrf_refresh_token = document.getElementById('csrf3')
+			csrf_refresh_token.value = document.cookie.match(/csrf_refresh_token=([\w\d-]+)/)[1];
+		">
 	      <p><input type=file name=file>
 	         <input type=submit value=Upload>
 			
 	         <input type=checkbox id=isAnon name=isAnon checked>
 	         <label for="isAnon">Anonymously</label>
 
+			<input type="hidden" id="csrf2" name="csrf_access_token">
+			<input type="hidden" id="csrf3" name="csrf_refresh_token'>
+
 	      </p>
 	    </form>
     </div>
+
 {% endblock %}

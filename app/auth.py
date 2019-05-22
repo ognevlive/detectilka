@@ -8,7 +8,7 @@ from flask_jwt_extended import (
 	JWTManager, jwt_required, create_access_token,
 	jwt_refresh_token_required, create_refresh_token,
 	get_jwt_identity, set_access_cookies,
-	set_refresh_cookies, unset_jwt_cookies, decode_token
+	set_refresh_cookies, unset_jwt_cookies, decode_token, get_csrf_token
 )  
 
 
@@ -23,17 +23,17 @@ def login():
 			return resp, 302
 		else:
 			flash('invalid credentials')
-			return redirect(url_for('login'), code=302)
+			return redirect(url_for('logout'), code=302)
 	else:
 		return render_template('login.html', title='Sign In', form=form)
 
 
 @app.route('/logout')
 def logout():
-	if not verifyCredentials():
+	try:
+		current_user = User.query.filter_by(access_token=request.cookies['access_token_cookie']).first()
+	except:
 		return redirect(url_for('login'))
-
-	current_user = User.query.filter_by(access_token=request.cookies['access_token_cookie']).first()
 
 	resp = make_response(redirect(url_for('login'), code=302))
 	resp, status = auth_logout(current_user.username, resp)
@@ -83,6 +83,7 @@ def auth_login(username, password, resp=None):
 	refresh_token = create_refresh_token(identity=username)
 
 	user.access_token = access_token
+	user.csrf_access_token = get_csrf_token(access_token)
 
 	PrivateInfo.query.filter_by(owner=user).delete()
 
@@ -158,6 +159,7 @@ def auth_refresh(username, resp=None):
 	access_token = create_access_token(identity=username)
 
 	current_user.access_token = access_token
+	current_user.csrf_access_token = get_csrf_token(access_token)
 	db.session.commit()
 
 	if resp == None:

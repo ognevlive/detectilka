@@ -12,6 +12,7 @@ from werkzeug.utils import secure_filename
 class User(db.Model):
     password_hash = db.Column(db.String(128))
     access_token  = db.Column(db.String(256), index=True)
+    csrf_access_token  = db.Column(db.String(256), index=True)
     #refresh_token = db.Column(db.String(256), index=True)
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), index=True, unique=True)
