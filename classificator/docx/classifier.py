@@ -88,4 +88,3 @@ def predict(file, sample):
   	
   	sample.status = 'Checked'
 
-  	db.session.commit()

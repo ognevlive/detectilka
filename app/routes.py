@@ -73,9 +73,6 @@ def index():
 
 		if current_user.csrf_access_token != request.values.get('csrf_access_token'):
 			print 'csrf error!'
-			print current_user.csrf_access_token
-			print request.values
-			print request.values.get('csrf_access_token')
 			return redirect(url_for('logout'))
 		file = request.files['file']
 		if file:
@@ -83,10 +80,16 @@ def index():
 			filename_saved = sample.saveFile(file)
 			sample.is_anon = request.form.get('isAnon') == 'on'
 
+			old_sample = Sample.query.filter((Sample.hash == sample.hash )& (Sample.answer != None)).first()
+			if old_sample != None:
+				sample.status = 'Checked'
+				sample.answer = old_sample.answer
+			else:
+				docx.classifier.predict(filename_saved, sample)
+
 			db.session.add(sample)
 			db.session.commit()
 
-			docx.classifier.predict(filename_saved, sample)
 
 			flash('File uploaded!')
 	return render_template('index.html', title='Detectilka', username=current_user.username)

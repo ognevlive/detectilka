@@ -5,7 +5,17 @@
     <h1>Sign In</h1>
     <div class="row">
         <div class="col-md-4">
-            {{ wtf.quick_form(form) }}
+            <form class="form form-horizontal" method="post" role="form">
+                {{ form.hidden_tag() }}
+                {{ wtf.form_errors(form, hiddens="only") }}
+
+                {{ wtf.form_field(form.username) }}
+                {{ wtf.form_field(form.password) }}
+                {{ wtf.form_field(form.remember_me) }}
+                {{ wtf.form_field(form.submit) }}
+
+            </form>
+            <!-- {{ wtf.quick_form(form) }} -->
         </div>
     </div>
     <br>

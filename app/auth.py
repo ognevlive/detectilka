@@ -32,6 +32,8 @@ def login():
 def logout():
 	try:
 		current_user = User.query.filter_by(access_token=request.cookies['access_token_cookie']).first()
+		if current_user == None:
+			return redirect(url_for('login'))
 	except:
 		return redirect(url_for('login'))
 
