@@ -6,9 +6,14 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.exceptions import DataConversionWarning
 from sklearn import metrics
 from sklearn.metrics import roc_curve, auc
+from datetime import datetime
 import numpy as np
 import pandas
 import createCSV
+
+import exiftool
+import xml.etree.ElementTree as ET
+import zipfile as zf
 
 
 class Classifier:
@@ -19,6 +24,7 @@ class Classifier:
 
 		self.targets = None
 		self.features = None
+		self.features2 = None
 		self.targetName = 'Malicious'
 		self.columnsToDrop = ['Unnamed: 0','MD5','Malicious']
 
@@ -26,14 +32,18 @@ class Classifier:
 	def getXandY(self):
 		self.targets = self.dataset[self.targetName]
 		self.features = self.dataset.drop(self.columnsToDrop, axis=1)
+		self.features2 = self.dataset.drop(self.columnsToDrop, axis=1)
 		convertedFeatures = self.features
+		convertedFeatures2 = self.features
 		for column in self.features.columns:
 			columnData = self.features[column]
 			if columnData.dtype == type(object):
 				le = LabelEncoder()
 				columnData = columnData.factorize()[0]
 				convertedFeatures[column] = le.fit_transform(columnData)
+				convertedFeatures2[column] = columnData
 		self.features = convertedFeatures
+		self.features2 = convertedFeatures2
 		self.features[self.features < 0] = 0
 
 
@@ -70,8 +80,8 @@ def train():
 
 	cl = Classifier(database)
 	cl.getXandY()
-                  
-  	model.fit(cl.features, cl.targets)  
+				  
+	model.fit(cl.features, cl.targets)  
 	print ('finish')
 
 def predict(file, sample):
@@ -79,12 +89,38 @@ def predict(file, sample):
 	if createCSV.run_file(file, database) == 0:
 		cl = Classifier(database)
 		cl.getXandY()
-	  	y_pred = int(model.predict(cl.features))
 
-	  	if y_pred == 1: sample.answer = 'Malware'
-	  	else:			sample.answer = 'Safe'
+		with exiftool.ExifTool() as et:
+			metadata = et.get_metadata('uploads/' + file)
+
+		print metadata
+
+
+		sample.filesize =  metadata['File:FileSize']
+		sample.words    =  metadata['XML:Words']
+		sample.pages    =  metadata['XML:Pages']
+		sample.characters     =  metadata['XML:Characters']
+		sample.totaledittime  =  metadata['XML:TotalEditTime']
+		sample.revisionnumber =  metadata['XML:RevisionNumber']
+
+		sample.title = metadata['XMP:Title']
+		sample.creator = metadata['XMP:Creator']
+		sample.company = metadata['XML:Company']
+
+		sample.lastprinted = metadata['XML:LastPrinted']
+		sample.createdate  = metadata['XML:CreateDate']
+		sample.lastmodifiedby = metadata['XML:LastModifiedBy']
+
+		# sample.lastprinted = datetime.strptime(str(cl.features2['LastPrinted'].data), '%b %d %Y %H:%M:%S')
+		# sample.createdate  = datetime.strptime(str(cl.features2['CreateDate'].data), '%b %d %Y %H:%M:%S')
+		# sample.lastmodifiedby = datetime.strptime(str(cl.features2['LastModifiedBy'].data), '%b %d %Y %H:%M:%S')
+
+		y_pred = int(model.predict(cl.features))
+
+		if y_pred == 1: sample.answer = 'Malware'
+		else:			sample.answer = 'Safe'
 	else:
 		sample.answer = 'Invalid file'
-  	
-  	sample.status = 'Checked'
+	
+	sample.status = 'Checked'
 

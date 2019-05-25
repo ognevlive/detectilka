@@ -3,7 +3,7 @@ Click==7.0
 dominate==2.3.5
 Flask==1.0.2
 Flask-Bcrypt==0.7.1
-Flask-Bootstrap==3.3.7.1
+Flask-Bootstrap4==4.0.2
 Flask-JWT==0.3.2
 Flask-JWT-Extended==3.18.1
 Flask-Login==0.4.1

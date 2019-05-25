@@ -1,29 +1,92 @@
 <div id="result">
 	{% if samples %}
-		<table class="table table-bordered table-striped">
-			<h3>Found files:</h3>
-			<thead>
-				<tr>
-					<th scope="col"> Name </th>
-					<th scope="col"> Hash </th>
-					<th scope="col"> Answer </th>
-					<th scope="col"> Time </th>
-					<th scope="col"> Status </th>
-					<th scope="col"> Owner </th>
+		<table id="samplesTable" class="table table-bordered">
+			<p class="h3">Latest files:</p>
+			<thead class="thead-dark">
+				<tr class="table-row">
+					<th data-field="name"   scope="col"> Name </th>
+					<th data-field="hash"   scope="col"> Hash </th>
+					<th data-field="answer" scope="col"> Answer </th>
+					<th data-field="time"   scope="col"> Time </th>
+					<th data-field="status" scope="col"> Status </th>
+					<th data-field="owner"  scope="col"> Owner </th>
+					
+					<th data-field="filesize"  scope="col"> filesize </th>
+					<th data-field="words"  scope="col"> words </th>
+					<th data-field="pages"  scope="col"> pages </th>
+					<th data-field="characters"  scope="col"> characters </th>
+					<th data-field="totaledittime"  scope="col"> totaledittime </th>
+					<th data-field="revisionnumber"  scope="col"> revisionnumber </th>
+
+					<th data-field="title"  scope="col"> title </th>
+					<th data-field="creator"  scope="col"> creator </th>
+					<th data-field="company"  scope="col"> company </th>
+					<th data-field="lastprinted"  scope="col"> lastprinted </th>
+					<th data-field="createdate"  scope="col"> createdate </th>
+					<th data-field="lastmodifiedby"  scope="col"> lastmodifiedby </th>
+
 				</tr>
 			</thead>
 			{% for sample in samples %}
-				<tr>
+				<tr class="table-row">
 					<td>{{ sample.filename }}</td>
 					<td>{{ sample.hash }}</td>
 					<td>{{ sample.answer }}</td>
 					<td>{{ sample.timestamp }}</td>
 					<td>{{ sample.status }}</td>
-					<td>{{ sample.owner }}</td>
+					<td>{{ sample.owner.username }}</td>
+
+					<td>{{ sample.filesize }}</td>
+					<td>{{ sample.words }}</td>
+					<td>{{ sample.pages }}</td>
+					<td>{{ sample.characters }}</td>
+					<td>{{ sample.totaledittime }}</td>
+					<td>{{ sample.revisionnumber }}</td>
+					<td>{{ sample.title }}</td>
+					<td>{{ sample.creator }}</td>
+					<td>{{ sample.company }}</td>
+					<td>{{ sample.lastprinted }}</td>
+					<td>{{ sample.createdate }}</td>
+					<td>{{ sample.lastmodifiedby }}</td>
+
 				</tr>
 			{% endfor %}
+	
 		</table>
 	{% else %}
 		<h2>No such files</h2>
 	{% endif %}
 </div>
+
+<script>
+			$("#search_form_input").keyup(function(){
+				var text = $(this).val().split(' ');
+
+				data = {}
+				for (var i = text.length - 1; i >= 0; i--) {
+ 					if (text[i].indexOf('=') == -1) {
+ 						key = "filename"
+ 						value = text[i]
+ 					}
+ 					else {
+						key = text[i].split('=')[0]
+						value = text[i].split('=')[1]
+					}
+ 					data[key] = value
+ 				}
+
+
+				$.ajax({
+					url: "/search_result",
+					type: "get",
+					data: data,
+
+					success: function(response) {
+						$("#result").html(response);
+					},
+					error: function(xhr) {
+
+					}
+				});
+			});
+		</script>

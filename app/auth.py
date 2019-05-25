@@ -155,6 +155,7 @@ def auth_logout(username, resp=None):
 def auth_refresh(username, resp=None):
 	current_user = User.query.filter_by(username=username).first()
 	if current_user is None:
+		print current_user
 		if resp == None: return invalidResp('invalid credentials'), 409
 		else:            return resp, 401
 
@@ -163,6 +164,8 @@ def auth_refresh(username, resp=None):
 	current_user.access_token = access_token
 	current_user.csrf_access_token = get_csrf_token(access_token)
 	db.session.commit()
+
+	print 'new ' + str(current_user.access_token)
 
 	if resp == None:
 		if resp == None:

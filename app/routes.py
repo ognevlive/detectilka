@@ -21,6 +21,14 @@ import sys
 sys.path.insert(0, 'classificator/docx')
 import docx 
 
+@app.context_processor
+def my_utility_processor():
+
+    def toTime(time):
+        return time.strftime("%b %d %Y %H:%M:%S")
+
+    return dict(toTime=toTime)
+
 
 def invalidResp(msg):
 	invalid_resp = {
@@ -46,7 +54,6 @@ def verifyCredentials(refresh=refreshFoo1):
 	try:
 		ua = request.user_agent
 		pi = PrivateInfo.query.filter_by(access_token=access_token).first()
-		print pi
 		if pi == None:
 			return refresh()
 		if pi.platform != ua.platform or \
@@ -82,7 +89,21 @@ def index():
 
 			old_sample = Sample.query.filter((Sample.hash == sample.hash )& (Sample.answer != None)).first()
 			if old_sample != None:
-				sample.status = 'Checked'
+				sample.filesize = old_sample.filesize
+				sample.words    = old_sample.words   
+				sample.pages    = old_sample.pages   
+				sample.characters     = old_sample.characters    
+				sample.totaledittime  = old_sample.totaledittime 
+				sample.revisionnumber = old_sample.revisionnumber
+
+				sample.title = old_sample.title
+				sample.creator = old_sample.creator
+				sample.company = old_sample.company
+				sample.lastprinted = old_sample.lastprinted
+				sample.createdate  = old_sample.createdate
+				sample.lastmodifiedby = old_sample.lastmodifiedby
+
+				sample.status = old_sample.status
 				sample.answer = old_sample.answer
 			else:
 				docx.classifier.predict(filename_saved, sample)
@@ -92,7 +113,9 @@ def index():
 
 
 			flash('File uploaded!')
-	return render_template('index.html', title='Detectilka', username=current_user.username)
+	return render_template('index.html', title='Detectilka', username=current_user.username,
+		samples=Sample.query.filter(Sample.owner == current_user).all(), 
+		)
 
 
 @app.route('/reset_password_request', methods=['GET', 'POST'])
@@ -143,7 +166,7 @@ def user(username):
 		entry_form.init(sample)
 		samples_form.samples.append_entry(entry_form)
 
-	return render_template('user.html', user=current_user, samples=samples_form.samples)
+	return render_template('user.html', user=current_user, samples=samples_form.samples, username=current_user.username)
 
 
 @app.route('/search', methods=['POST'])
@@ -163,7 +186,11 @@ def search():
 		entry_form = SampleEntryForm()
 		entry_form.init(sample)
 		samples_form.samples.append_entry(entry_form)
-	return render_template('search.html', req=req, samples=samples_form.samples)
+
+	return render_template('search.html', req=req, 
+		samples=Sample.query.filter(Sample.filename.contains(req) & (Sample.is_anon == False)).all(), 
+		username=current_user.username
+		)
 
 
 @app.route('/search_result', methods=['GET'])
@@ -175,7 +202,7 @@ def search_result():
 	current_user = User.query.filter_by(access_token=request.cookies['access_token_cookie']).first()
 
 	samples = parseSearchArgs(request.args)
-	return render_template('samples.html', samples=samples)
+	return render_template('samples.html', samples=samples, username=current_user.username)
 
 
 def parseSearchArgs(args, api=None):
@@ -241,7 +268,7 @@ def report(id):
 	samples_form = SamplesListForm()
 	samples_form.samples.append_entry(entry_form)
 
-	return render_template('report.html', samples=samples_form.samples)
+	return render_template('report.html', samples=samples_form.samples, username=current_user.username)
 
 
 @app.route('/refresh', methods=['GET'])
@@ -262,14 +289,17 @@ def refresh(api=False):
 	access_token = create_access_token(identity=current_user.username)
 	current_user.access_token = access_token
 	current_user.csrf_access_token = get_csrf_token(access_token)
+	info.access_token = access_token
 	db.session.commit()
 
-	resp = jsonify({
-			'status': 'success',
-			'message': 'Refresh was successful'
-		})
+	if not api:
+		resp = make_response(redirect(url_for(request.args.get('next'))))
+		set_access_cookies(resp, access_token)
+	else:
+		resp = jsonify({
+				'status': 'success',
+				'message': 'Refresh was successful'
+			})
+		set_access_cookies(resp, access_token)
+	return resp, 200
 
-	set_access_cookies(resp, access_token)
-
-	if not api: return redirect(url_for(request.args.get('next')))
-	else:		return invalidResp('invalid credentials'), 409

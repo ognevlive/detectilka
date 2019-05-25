@@ -44,6 +44,20 @@ class Sample(db.Model):
     status    = db.Column(db.String(16), index=True)
     is_anon   = db.Column(db.Boolean, index=True)
 
+    filesize = db.Column(db.Integer)
+    words    = db.Column(db.Integer)
+    pages    = db.Column(db.Integer)
+    characters     = db.Column(db.Integer)
+    totaledittime  = db.Column(db.Integer)
+    revisionnumber = db.Column(db.Integer)
+
+    title = db.Column(db.String(128))
+    creator = db.Column(db.String(128))
+    company = db.Column(db.String(128))
+    lastprinted = db.Column(db.String(128))
+    createdate  = db.Column(db.String(128))
+    lastmodifiedby = db.Column(db.String(128))
+
     def __repr__(self):
         return '<Sample {}>'.format(self.filename)
 

@@ -1,41 +1,129 @@
 {% extends "base.html" %}
 
 {% block app_content %}
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 
-	<h1>Request: </h1>
+
+	<p class="h1">Request: </p>
 		<input type="text" id="search_form_input" value={{ req }}></input>
 
-		<div id="result">
-			{% if samples %}
-				<table class="table table-bordered table-striped">
-					<h3>Found files:</h3>
-					<thead>
-						<tr>
-							<th scope="col"> Name </th>
-							<th scope="col"> Hash </th>
-							<th scope="col"> Answer </th>
-							<th scope="col"> Time </th>
-							<th scope="col"> Status </th>
-							<th scope="col"> Owner </th>
-						</tr>
-					</thead>
-					{% for sample in samples %}
-						<tr>
-							<td>{{ sample.filename }}</td>
-							<td>{{ sample.hash }}</td>
-							<td>{{ sample.answer }}</td>
-							<td>{{ sample.timestamp }}</td>
-							<td>{{ sample.status }}</td>
-							<td>{{ sample.owner }}</td>
-						</tr>
-					{% endfor %}
-				</table>
-			{% else %}
-				<h2>No such files</h2>
-			{% endif %}
-		</div>
+		<hr>
 
+		<div id="result">
+		{% if samples %}
+			<table id="samplesTable" class="table table-bordered">
+				<p class="h3">Latest files:</p>
+				<thead class="thead-dark">
+					<tr class="table-row">
+						<th data-field="name"   scope="col"> Name </th>
+						<th data-field="hash"   scope="col"> Hash </th>
+						<th data-field="answer" scope="col"> Answer </th>
+						<th data-field="time"   scope="col"> Time </th>
+						<th data-field="status" scope="col"> Status </th>
+						<th data-field="owner"  scope="col"> Owner </th>
+						
+						<th data-field="filesize"  scope="col"> filesize </th>
+						<th data-field="words"  scope="col"> words </th>
+						<th data-field="pages"  scope="col"> pages </th>
+						<th data-field="characters"  scope="col"> characters </th>
+						<th data-field="totaledittime"  scope="col"> totaledittime </th>
+						<th data-field="revisionnumber"  scope="col"> revisionnumber </th>
+
+						<th data-field="title"  scope="col"> title </th>
+						<th data-field="creator"  scope="col"> creator </th>
+						<th data-field="company"  scope="col"> company </th>
+						<th data-field="lastprinted"  scope="col"> lastprinted </th>
+						<th data-field="createdate"  scope="col"> createdate </th>
+						<th data-field="lastmodifiedby"  scope="col"> lastmodifiedby </th>
+
+					</tr>
+				</thead>
+				{% for sample in samples %}
+					<tr class="table-row">
+						<td>{{ sample.filename }}</td>
+						<td>{{ sample.hash }}</td>
+						<td>{{ sample.answer }}</td>
+						<td>{{ toTime(sample.timestamp) }}</td>
+						<td>{{ sample.status }}</td>
+						<td>{{ sample.owner.username }}</td>
+
+						<td>{{ sample.filesize }}</td>
+						<td>{{ sample.words }}</td>
+						<td>{{ sample.pages }}</td>
+						<td>{{ sample.characters }}</td>
+						<td>{{ sample.totaledittime }}</td>
+						<td>{{ sample.revisionnumber }}</td>
+						<td>{{ sample.title }}</td>
+						<td>{{ sample.creator }}</td>
+						<td>{{ sample.company }}</td>
+						<td>{{ sample.lastprinted }}</td>
+						<td>{{ sample.createdate }}</td>
+						<td>{{ sample.lastmodifiedby }}</td>
+
+					</tr>
+				{% endfor %}
+		
+			</table>
+		{% else %}
+			<h2>No such files</h2>
+		{% endif %}
+	</div>
+	
+    <link rel="stylesheet"  src="https://cdn.datatables.net/buttons/1.5.6/css/buttons.bootstrap4.min.css"></script>
+	    <script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.colVis.min.js"></script>
+
+		<script>
+			var toSkip = [];
+				for (var i = 1; i <= 12; i++) {
+				toSkip.push(-1 * i);
+			}
+
+			$(document).ready(function () {
+				var table = $('#samplesTable').DataTable({
+					"pagingType": "full_numbers",
+				    "bLengthChange": false,
+				    "bFilter": true,
+					"searching": false,
+					buttons: [ 'copy', 'excel', 'pdf', 'colvis' ],
+					columnDefs: [
+			            {
+			                "targets": toSkip,
+			                "visible": false
+			            },
+			           	{ 
+			           		"max-width": "20%", 
+			           		"targets": 0 
+			           	},
+			        ]
+				});
+
+				table.buttons().container().appendTo( '#samplesTable_wrapper .col-md-6:eq(0)' );
+			});
+
+		</script>
+
+	<!-- 	<script type="text/javascript">
+			var $table = $('#table').bootstrapTable({
+			});
+			$("#table").on('click', 'tbody > tr > td', function (e){
+			    var table = $("#table").data('bootstrap.table'),
+			        $element = $(this),
+			        $tr = $element.parent(),
+			        row = $("#table").data[$tr.data('index')],
+			        cellIndex = $element[0].cellIndex,
+			        $headerCell = $("#table").$header.find('th:eq(' + cellIndex + ')'),
+			        field = $headerCell.data('field'),
+			        value = row[field];
+
+			    alert(table)
+			    
+			    table.$el.trigger($.Event('click-cell.bs.table'), [value, row, $element]);
+			});
+
+			$("#table").on('click-cell.bs.table', function(e, value, row, $element){
+			    alert( "Value: " + value );
+			});
+		</script>
+ -->
 		<script>
 			$("#search_form_input").keyup(function(){
 				var text = $(this).val().split(' ');

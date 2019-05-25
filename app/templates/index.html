@@ -11,26 +11,136 @@
 {% endblock %}
 
 {% block app_content %}
+
 	<div>
-		<h4>Upload file</h4>
-		<form action="" method=post enctype=multipart/form-data onsubmit="
+		<h4 class="display-4">Upload file</h4>
+		<form class="mt-4" action="" method=post enctype=multipart/form-data onsubmit="
 			var csrf_access_token = document.getElementById('csrf2')
 			csrf_access_token.value = document.cookie.match(/csrf_access_token=([\w\d-]+)/)[1];
 
 			var csrf_refresh_token = document.getElementById('csrf3')
 			csrf_refresh_token.value = document.cookie.match(/csrf_refresh_token=([\w\d-]+)/)[1];
 		">
-	      <p><input type=file name=file>
-	         <input type=submit value=Upload>
-			
-	         <input type=checkbox id=isAnon name=isAnon checked>
-	         <label for="isAnon">Anonymously</label>
+			<div class="custom-file">
+			    <input type="file" name="file" class="custom-file-input" id="customFile">
+			    <label class="custom-file-label" for="customFile">Choose file</label>
+	 		</div>
+
+
+	        <div class="custom-control custom-checkbox mt-3 pl-0">
+			    <button type="submit" class="btn btn-primary mr-5">Submit</button>
+				<label class="form-check-label">
+					<input type="checkbox" class="form-check-input" value="">Anonymously
+				</label>
+			</div>
 
 			<input type="hidden" id="csrf2" name="csrf_access_token">
-			<input type="hidden" id="csrf3" name="csrf_refresh_token'>
+			<input type="hidden" id="csrf3" name="csrf_refresh_token">
 
-	      </p>
 	    </form>
     </div>
+
+    <script>
+		$(".custom-file-input").on("change", function() {
+		  var fileName = $(this).val().split("\\").pop();
+		  $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
+		});
+	</script>
+
+	<hr>
+
+	<div id="result">
+		{% if samples %}
+			<table id="samplesTable" class="table table-bordered">
+				<p class="h3">Latest files:</p>
+				<thead class="thead-dark">
+					<tr class="table-row">
+						<th data-field="name"   scope="col"> Name </th>
+						<th data-field="hash"   scope="col"> Hash </th>
+						<th data-field="answer" scope="col"> Answer </th>
+						<th data-field="time"   scope="col"> Time </th>
+						<th data-field="status" scope="col"> Status </th>
+						<th data-field="owner"  scope="col"> Owner </th>
+						
+						<th data-field="filesize"  scope="col"> filesize </th>
+						<th data-field="words"  scope="col"> words </th>
+						<th data-field="pages"  scope="col"> pages </th>
+						<th data-field="characters"  scope="col"> characters </th>
+						<th data-field="totaledittime"  scope="col"> totaledittime </th>
+						<th data-field="revisionnumber"  scope="col"> revisionnumber </th>
+
+						<th data-field="title"  scope="col"> title </th>
+						<th data-field="creator"  scope="col"> creator </th>
+						<th data-field="company"  scope="col"> company </th>
+						<th data-field="lastprinted"  scope="col"> lastprinted </th>
+						<th data-field="createdate"  scope="col"> createdate </th>
+						<th data-field="lastmodifiedby"  scope="col"> lastmodifiedby </th>
+
+					</tr>
+				</thead>
+				{% for sample in samples %}
+					<tr class="table-row">
+						<td>{{ sample.filename }}</td>
+						<td>{{ sample.hash }}</td>
+						<td>{{ sample.answer }}</td>
+						<td>{{ toTime(sample.timestamp) }}</td>
+						<td>{{ sample.status }}</td>
+						<td>{{ sample.owner.username }}</td>
+
+						<td>{{ sample.filesize }}</td>
+						<td>{{ sample.words }}</td>
+						<td>{{ sample.pages }}</td>
+						<td>{{ sample.characters }}</td>
+						<td>{{ sample.totaledittime }}</td>
+						<td>{{ sample.revisionnumber }}</td>
+						<td>{{ sample.title }}</td>
+						<td>{{ sample.creator }}</td>
+						<td>{{ sample.company }}</td>
+						<td>{{ sample.lastprinted }}</td>
+						<td>{{ sample.createdate }}</td>
+						<td>{{ sample.lastmodifiedby }}</td>
+
+					</tr>
+				{% endfor %}
+		
+			</table>
+		{% else %}
+			<h2>No such files</h2>
+		{% endif %}
+	</div>
+
+	    <link rel="stylesheet"  src="https://cdn.datatables.net/buttons/1.5.6/css/buttons.bootstrap4.min.css"></script>
+	    <script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.colVis.min.js"></script>
+
+		<script>
+			var toSkip = [];
+				for (var i = 1; i <= 12; i++) {
+				toSkip.push(-1 * i);
+			}
+
+			$(document).ready(function () {
+				var table = $('#samplesTable').DataTable({
+					"pagingType": "full_numbers",
+				    "bLengthChange": false,
+				    "bFilter": true,
+					"searching": false,
+					buttons: [ 'copy', 'excel', 'pdf', 'colvis' ],
+					columnDefs: [
+			            {
+			                "targets": toSkip,
+			                "visible": false
+			            },
+			           	{ 
+			           		"max-width": "20%", 
+			           		"targets": 0 
+			           	},
+			        ]
+				});
+
+				table.buttons().container().appendTo( '#samplesTable_wrapper .col-md-6:eq(0)' );
+			});
+
+		</script>
+
 
 {% endblock %}
