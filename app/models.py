@@ -104,6 +104,8 @@ class Stats(db.Model):
         self.extentions = {}
         for file in os.listdir('uploads'):
             ext = magic.from_file('uploads/' + file)
+            end = ext.find(',')
+            ext = ext[:end]
             if ext in self.extentions:
                 self.extentions.update({ext : self.extentions[ext] + 1})
             else:

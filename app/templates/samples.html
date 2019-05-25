@@ -36,7 +36,7 @@
 						<td>{{ sample.answer }}</td>
 						<td>{{ sample.timestamp }}</td>
 						<td>{{ sample.status }}</td>
-						<td>{{ sample.owner }}</td>
+						<td>{{ sample.owner.username }}</td>
 
 						<td>{{ sample.filesize }}</td>
 						<td>{{ sample.words }}</td>
@@ -60,7 +60,7 @@
 		{% endif %}
 	</div>
 
-	
+
 <script>
 	var toSkip = [];
 		for (var i = 1; i <= 12; i++) {
