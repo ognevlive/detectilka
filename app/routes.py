@@ -180,24 +180,29 @@ def search():
 	if current_user.csrf_access_token != request.values.get('csrf_access_token'):
 		return redirect(url_for('logout'))
 
-	req = request.values['req']
-	samples_form = SamplesListForm()
-	if len(req) != 0:
-		for sample in Sample.query.filter(Sample.filename.contains(req) & (Sample.is_anon == False)).all():
-			entry_form = SampleEntryForm()
-			entry_form.init(sample)
-			samples_form.samples.append_entry(entry_form)
+	query = { }
+	for req in request.args:
+		param = request.args[req].lower()
+		query.update({req : param})
 
-	if len(samples_form.samples) == 0:
-		return render_template('search.html', req=req, 
-			username=current_user.username
-			)
-	else:
-		return render_template('search.html', req=req, 
-			samples=samples_form,
-			username=current_user.username
-			)
+	from datetime import datetime
 
+	if 'hash' in query: h = Sample.hash == query['hash']
+	else: h = Sample.hash.isnot(False)
+
+	if 'filename' in query: f = Sample.filename.contains(query['filename'])
+	else: f = Sample.filename.isnot(False)
+
+	if 'answer' in query: a = Sample.answer.contains(query['answer'])
+	else: a = Sample.answer.isnot(False)
+
+	if 'time' in query: t = Sample.timestamp <= datetime.strptime(query['time'], '%Y-%m-%d')
+	else: t = Sample.timestamp.isnot(False)
+
+	anon = Sample.is_anon == False
+
+	return render_template('search.html', samples=Sample.query.filter(h & f & a & t & anon).all(), username=current_user.username)
+	
 
 @app.route('/search_result', methods=['GET'])
 def search_result():

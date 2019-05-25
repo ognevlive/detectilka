@@ -3,15 +3,15 @@
 {% block app_content %}
 
 
-	<p class="h1">Request: </p>
-		<input type="text" id="search_form_input" value={{ req }}></input>
+	<p class="display-4 pt-5">Request: </p>
+		<input class="form-control" type="text" id="search_form_input" value={{ req }}></input>
 
 		<hr>
 
 		<div id="result">
 		{% if samples %}
-			<table id="samplesTable" class="table table-bordered">
-				<p class="h3">Latest files:</p>
+			<table id="samplesTable" class="table table-bordered" style="width: 80%">
+				<p class="display-4 pt-4">Latest files:</p>
 				<thead class="thead-dark">
 					<tr class="table-row">
 						<th data-field="name"   scope="col"> Name </th>
@@ -63,7 +63,7 @@
 		
 			</table>
 		{% else %}
-			<h2>No such files</h2>
+			<p class="display-5 pt-4">No such files</p>
 		{% endif %}
 	</div>
 	
@@ -100,29 +100,6 @@
 
 		</script>
 
-	<!-- 	<script type="text/javascript">
-			var $table = $('#table').bootstrapTable({
-			});
-			$("#table").on('click', 'tbody > tr > td', function (e){
-			    var table = $("#table").data('bootstrap.table'),
-			        $element = $(this),
-			        $tr = $element.parent(),
-			        row = $("#table").data[$tr.data('index')],
-			        cellIndex = $element[0].cellIndex,
-			        $headerCell = $("#table").$header.find('th:eq(' + cellIndex + ')'),
-			        field = $headerCell.data('field'),
-			        value = row[field];
-
-			    alert(table)
-			    
-			    table.$el.trigger($.Event('click-cell.bs.table'), [value, row, $element]);
-			});
-
-			$("#table").on('click-cell.bs.table', function(e, value, row, $element){
-			    alert( "Value: " + value );
-			});
-		</script>
- -->
 		<script>
 			$("#search_form_input").keyup(function(){
 				var text = $(this).val().split(' ');
