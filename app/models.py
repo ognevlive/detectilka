@@ -5,6 +5,7 @@ from time import time
 import jwt
 import flask_bcrypt
 import os
+import magic
 from hashlib import md5
 from werkzeug.utils import secure_filename
 
@@ -80,3 +81,34 @@ class PrivateInfo(db.Model):
 
     def __repr__(self):
         return '<PrivateInfo {}>'.format(self.access_token)
+
+
+class Stats(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    malware_count = db.Column(db.Integer)
+    safe_count = db.Column(db.Integer)
+
+    last_update = db.Column(db.DateTime)
+
+    extentions = {}
+
+    def __repr__(self):
+        return '<Stats {}>'.format(self.access_token)
+
+    def get(self):
+        if self.last_update == None or self.last_update + 5000 < datetime.now():
+            print 'need update'
+        self.updateTypeStats()
+
+    def updateTypeStats(self):
+        self.extentions = {}
+        for file in os.listdir('uploads'):
+            ext = magic.from_file('uploads/' + file)
+            if ext in self.extentions:
+                self.extentions.update({ext : self.extentions[ext] + 1})
+            else:
+                self.extentions.update({ext : 1})
+
+        self.counts = list(self.extentions.values())
+        self.names  = list(self.extentions.keys())
+

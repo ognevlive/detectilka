@@ -1,7 +1,7 @@
 from flask import render_template, flash, redirect, url_for, request, jsonify, make_response
 #from flask_login import current_user, login_user, logout_user, login_required
 from app import app, db, jwt
-from app.models import User, Sample, PrivateInfo
+from app.models import User, Sample, PrivateInfo, Stats
 from app.email import send_password_reset_email
 from app.forms import LoginForm, SamplesListForm, SampleEntryForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm
 from werkzeug.urls import url_parse
@@ -182,15 +182,21 @@ def search():
 
 	req = request.values['req']
 	samples_form = SamplesListForm()
-	for sample in Sample.query.filter(Sample.filename.contains(req) & (Sample.is_anon == False)).all():
-		entry_form = SampleEntryForm()
-		entry_form.init(sample)
-		samples_form.samples.append_entry(entry_form)
+	if len(req) != 0:
+		for sample in Sample.query.filter(Sample.filename.contains(req) & (Sample.is_anon == False)).all():
+			entry_form = SampleEntryForm()
+			entry_form.init(sample)
+			samples_form.samples.append_entry(entry_form)
 
-	return render_template('search.html', req=req, 
-		samples=Sample.query.filter(Sample.filename.contains(req) & (Sample.is_anon == False)).all(), 
-		username=current_user.username
-		)
+	if len(samples_form.samples) == 0:
+		return render_template('search.html', req=req, 
+			username=current_user.username
+			)
+	else:
+		return render_template('search.html', req=req, 
+			samples=samples_form,
+			username=current_user.username
+			)
 
 
 @app.route('/search_result', methods=['GET'])
@@ -201,8 +207,28 @@ def search_result():
 	
 	current_user = User.query.filter_by(access_token=request.cookies['access_token_cookie']).first()
 
-	samples = parseSearchArgs(request.args)
-	return render_template('samples.html', samples=samples, username=current_user.username)
+	query = { }
+	for req in request.args:
+		param = request.args[req].lower()
+		query.update({req : param})
+
+	from datetime import datetime
+
+	if 'hash' in query: h = Sample.hash == query['hash']
+	else: h = Sample.hash.isnot(False)
+
+	if 'filename' in query: f = Sample.filename.contains(query['filename'])
+	else: f = Sample.filename.isnot(False)
+
+	if 'answer' in query: a = Sample.answer.contains(query['answer'])
+	else: a = Sample.answer.isnot(False)
+
+	if 'time' in query: t = Sample.timestamp <= datetime.strptime(query['time'], '%Y-%m-%d')
+	else: t = Sample.timestamp.isnot(False)
+
+	anon = Sample.is_anon == False
+
+	return render_template('samples.html', samples=Sample.query.filter(h & f & a & t & anon).all(), username=current_user.username)
 
 
 def parseSearchArgs(args, api=None):
@@ -260,15 +286,9 @@ def report(id):
 	
 	current_user = User.query.filter_by(access_token=request.cookies['access_token_cookie']).first()
 
-	sample = Sample.query.filter_by(id=id).first_or_404()
+	samples = Sample.query.filter_by(id=id).all()
 
-	entry_form = SampleEntryForm()
-	entry_form.init(sample)
-	
-	samples_form = SamplesListForm()
-	samples_form.samples.append_entry(entry_form)
-
-	return render_template('report.html', samples=samples_form.samples, username=current_user.username)
+	return render_template('report.html', samples=samples, username=current_user.username)
 
 
 @app.route('/refresh', methods=['GET'])
@@ -303,3 +323,18 @@ def refresh(api=False):
 		set_access_cookies(resp, access_token)
 	return resp, 200
 
+
+
+@app.route('/stats', methods=['GET'])
+def stats():
+	status = verifyCredentials()
+	if status != True:
+		return status
+	
+	stat = Stats.query.filter_by(id=1).first()
+	if stat == None:
+		stat = Stats()
+
+	stat.get()
+
+	return render_template('stats.html', title='Stats', stat=stat)

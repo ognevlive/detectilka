@@ -34,7 +34,6 @@
 						<th data-field="lastprinted"  scope="col"> lastprinted </th>
 						<th data-field="createdate"  scope="col"> createdate </th>
 						<th data-field="lastmodifiedby"  scope="col"> lastmodifiedby </th>
-
 					</tr>
 				</thead>
 				{% for sample in samples %}
@@ -42,9 +41,9 @@
 						<td>{{ sample.filename }}</td>
 						<td>{{ sample.hash }}</td>
 						<td>{{ sample.answer }}</td>
-						<td>{{ toTime(sample.timestamp) }}</td>
+						<td>{{ sample.timestamp }}</td>
 						<td>{{ sample.status }}</td>
-						<td>{{ sample.owner.username }}</td>
+						<td>{{ sample.owner }}</td>
 
 						<td>{{ sample.filesize }}</td>
 						<td>{{ sample.words }}</td>
@@ -68,7 +67,7 @@
 		{% endif %}
 	</div>
 	
-    <link rel="stylesheet"  src="https://cdn.datatables.net/buttons/1.5.6/css/buttons.bootstrap4.min.css"></script>
+  		<link rel="stylesheet"  src="https://cdn.datatables.net/buttons/1.5.6/css/buttons.bootstrap4.min.css"></script>
 	    <script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.colVis.min.js"></script>
 
 		<script>
@@ -127,7 +126,6 @@
 		<script>
 			$("#search_form_input").keyup(function(){
 				var text = $(this).val().split(' ');
-
 				data = {}
 				for (var i = text.length - 1; i >= 0; i--) {
  					if (text[i].indexOf('=') == -1) {

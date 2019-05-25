@@ -55,7 +55,7 @@ class SampleEntryForm(FlaskForm):
         self.hash = sample.hash
         self.timestamp = sample.timestamp
         self.status = sample.status
-        self.owner = sample.owner.username
+        self.owner = sample.owner
 
 class SamplesListForm(FlaskForm):
     title = StringField('title')
