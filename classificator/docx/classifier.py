@@ -96,20 +96,20 @@ def predict(file, sample):
 		print metadata
 
 
-		sample.filesize =  metadata['File:FileSize']
-		sample.words    =  metadata['XML:Words']
-		sample.pages    =  metadata['XML:Pages']
-		sample.characters     =  metadata['XML:Characters']
-		sample.totaledittime  =  metadata['XML:TotalEditTime']
-		sample.revisionnumber =  metadata['XML:RevisionNumber']
+		if 'File:FileSize' in metadata: sample.filesize =  metadata['File:FileSize']
+		if 'XML:Words' in metadata: sample.words    =  metadata['XML:Words']
+		if 'XML:Pages' in metadata: sample.pages    =  metadata['XML:Pages']
+		if 'XML:Characters' in metadata: sample.characters     =  metadata['XML:Characters']
+		if 'XML:TotalEditTime' in metadata: sample.totaledittime  =  metadata['XML:TotalEditTime']
+		if 'XML:RevisionNumber' in metadata: sample.revisionnumber =  metadata['XML:RevisionNumber']
 
-		sample.title = metadata['XMP:Title']
-		sample.creator = metadata['XMP:Creator']
-		sample.company = metadata['XML:Company']
+		if 'XMP:Title' in metadata: sample.title = metadata['XMP:Title']
+		if 'XMP:Creator' in metadata: sample.creator = metadata['XMP:Creator']
+		if 'XML:Company' in metadata: sample.company = metadata['XML:Company']
 
-		sample.lastprinted = metadata['XML:LastPrinted']
-		sample.createdate  = metadata['XML:CreateDate']
-		sample.lastmodifiedby = metadata['XML:LastModifiedBy']
+		if 'XML:LastPrinted' in metadata: sample.lastprinted = metadata['XML:LastPrinted']
+		if 'XML:CreateDate' in metadata: sample.createdate  = metadata['XML:CreateDate']
+		if 'XML:LastModifiedBy' in metadata: sample.lastmodifiedby = metadata['XML:LastModifiedBy']
 
 		# sample.lastprinted = datetime.strptime(str(cl.features2['LastPrinted'].data), '%b %d %Y %H:%M:%S')
 		# sample.createdate  = datetime.strptime(str(cl.features2['CreateDate'].data), '%b %d %Y %H:%M:%S')
