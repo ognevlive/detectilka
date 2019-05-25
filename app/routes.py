@@ -343,3 +343,13 @@ def stats():
 	stat.get()
 
 	return render_template('stats.html', title='Stats', stat=stat)
+
+
+@app.context_processor
+def my_utility_processor():
+
+    def toTime(time):
+        return time.strftime("%b %d %Y %H:%M:%S")
+
+    return dict(toTime=toTime)
+

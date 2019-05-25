@@ -3,7 +3,7 @@
 
 <div id="result">
 		{% if samples %}
-			<table id="samplesTable" class="table table-bordered" style="width: 80%">
+			<table id="samplesTable" class="table table-bordered">
 				<p class="display-4 pt-4">Latest files:</p>
 				<thead class="thead-dark">
 					<tr class="table-row">
@@ -34,7 +34,7 @@
 						<td>{{ sample.filename }}</td>
 						<td>{{ sample.hash }}</td>
 						<td>{{ sample.answer }}</td>
-						<td>{{ sample.timestamp }}</td>
+						<td>{{ toTime(sample.timestamp) }}</td>
 						<td>{{ sample.status }}</td>
 						<td>{{ sample.owner.username }}</td>
 
@@ -83,7 +83,9 @@
 	           		"max-width": "20%", 
 	           		"targets": 0 
 	           	},
-	        ]
+	        ],
+	        "scrollX": true ,
+
 		});
 
 		table.buttons().container().appendTo( '#samplesTable_wrapper .col-md-6:eq(0)' );
