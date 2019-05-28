@@ -15,13 +15,15 @@
 	<div>
 		<h4 class="display-4 pt-5">Upload file</h4>
 		<form class="mt-4" action="" method=post enctype=multipart/form-data onsubmit="
+			amplitude.getInstance().logEvent('upload_file');
+
 			var csrf_access_token = document.getElementById('csrf2')
 			csrf_access_token.value = document.cookie.match(/csrf_access_token=([\w\d-]+)/)[1];
 
 			var csrf_refresh_token = document.getElementById('csrf3')
 			csrf_refresh_token.value = document.cookie.match(/csrf_refresh_token=([\w\d-]+)/)[1];
 		">
-			<div class="custom-file">
+			<div class="custom-file" draggable="true">
 			    <input type="file" name="file" class="custom-file-input" id="customFile">
 			    <label class="custom-file-label" for="customFile">Choose file</label>
 	 		</div>
@@ -143,5 +145,23 @@
 
 		</script>
 
+		<script type="text/javascript">
+			var checkDiv = setInterval(function(){
+				var buttons = document.getElementsByClassName("dt-buttons btn-group")
+				if (buttons[0] != undefined) {
+					var pdf   = buttons[0].children[2]
+					var excel = buttons[0].children[1]
+
+					pdf.onclick = function () {
+						amplitude.getInstance().logEvent('download_pdf');
+					}
+
+					excel.onclick = function () {
+						amplitude.getInstance().logEvent('download_excel');
+					}
+		           	clearInterval(checkDiv);
+				} 
+	    	}, 100); 
+		</script>
 
 {% endblock %}

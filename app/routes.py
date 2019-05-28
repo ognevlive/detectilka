@@ -113,6 +113,7 @@ def index():
 
 
 			flash('File uploaded!')
+
 	return render_template('index.html', title='Detectilka', username=current_user.username,
 		samples=Sample.query.filter(Sample.owner == current_user).all(), 
 		)

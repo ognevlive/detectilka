@@ -4,6 +4,10 @@
 {% block app_content %}
 
 	<script type="text/javascript">
+		amplitude.getInstance().logEvent('get_stats');
+	</script>
+
+	<script type="text/javascript">
 		$(document).ready(function(){
 			let scroll_link = $('.scroll');
 			

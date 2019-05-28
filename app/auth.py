@@ -1,3 +1,4 @@
+import re
 from flask import render_template, flash, redirect, url_for, request, jsonify, make_response
 from app import app, db, jwt
 from app.models import User, PrivateInfo
@@ -10,7 +11,6 @@ from flask_jwt_extended import (
 	get_jwt_identity, set_access_cookies,
 	set_refresh_cookies, unset_jwt_cookies, decode_token, get_csrf_token
 )  
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -45,10 +45,21 @@ def logout():
 		return redirect(url_for('login'))
 
 
+def testPassword(password):
+	if len(password) < 8 \
+		or re.findall('([A-Z])', password) == [] \
+		or re.findall('([0-9])', password) == []:
+		flash('Password must contains minimum 1 uppercase letter and 1 number!')
+		print 'flash'
+		return False
+	else:
+		return True
+
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
 	form = RegistrationForm()
-	if form.validate_on_submit():
+	if form.validate_on_submit() and testPassword(form.password.data):
 		data, status = auth_register(form.username.data, form.email.data, form.password.data)
 		if status == 201:
 			flash('Congratulations, you are now a registered user!')

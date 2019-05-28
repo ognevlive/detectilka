@@ -2,6 +2,10 @@
 
 {% block app_content %}
 
+	<script type="text/javascript">
+		amplitude.getInstance().logEvent('search_file_base');
+	</script>
+
 
 	<p class="display-4 pt-5">Request: </p>
 		<input class="form-control" type="text" id="search_form_input" value={{ req }}></input>
