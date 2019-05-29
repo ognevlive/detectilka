@@ -1,5 +1,5 @@
 from datetime import datetime
-from app import db, login, app
+from app import db, app
 from werkzeug.security import generate_password_hash, check_password_hash
 from time import time
 import jwt
@@ -28,11 +28,6 @@ class User(db.Model):
 
     def __repr__(self):
         return '<User {}>'.format(self.username)
-
-
-@login.user_loader
-def load_user(id):
-    return User.query.get(int(id))
 
 
 class Sample(db.Model):

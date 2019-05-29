@@ -1,12 +1,6 @@
 {% extends "base.html" %}
 
 {% block app_content %}
-
-	<script type="text/javascript">
-		amplitude.getInstance().logEvent('search_file_base');
-	</script>
-
-
 	<p class="display-4 pt-5">Request: </p>
 		<input class="form-control" type="text" id="search_form_input" value={{ req }}></input>
 
@@ -14,7 +8,7 @@
 
 		<div id="result">
 		{% if samples %}
-			<table id="samplesTable" class="table table-bordered" style="width: 100%">
+			<table id="samplesTable" class="table table-bordered">
 				<p class="display-4 pt-4">Latest files:</p>
 				<thead class="thead-dark">
 					<tr class="table-row">
@@ -70,71 +64,7 @@
 			<p class="display-5 pt-4">No such files</p>
 		{% endif %}
 	</div>
-	
-  		<link rel="stylesheet"  src="https://cdn.datatables.net/buttons/1.5.6/css/buttons.bootstrap4.min.css"></script>
-	    <script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.colVis.min.js"></script>
-
-		<script>
-			var toSkip = [];
-				for (var i = 1; i <= 12; i++) {
-				toSkip.push(-1 * i);
-			}
-
-			$(document).ready(function () {
-				var table = $('#samplesTable').DataTable({
-					"pagingType": "full_numbers",
-				    "bLengthChange": false,
-				    "bFilter": true,
-					"searching": false,
-					buttons: [ 'copy', 'excel', 'pdf', 'colvis' ],
-					columnDefs: [
-			            {
-			                "targets": toSkip,
-			                "visible": false
-			            },
-			           	{ 
-			           		"max-width": "20%", 
-			           		"targets": 0 
-			           	},
-			        ],
-			        "autoWidth": false
-				});
-
-				table.buttons().container().appendTo( '#samplesTable_wrapper .col-md-6:eq(0)' );
-			});
-
-		</script>
-
-		<script>
-			$("#search_form_input").keyup(function(){
-				var text = $(this).val().split(' ');
-				data = {}
-				for (var i = text.length - 1; i >= 0; i--) {
- 					if (text[i].indexOf('=') == -1) {
- 						key = "filename"
- 						value = text[i]
- 					}
- 					else {
-						key = text[i].split('=')[0]
-						value = text[i].split('=')[1]
-					}
- 					data[key] = value
- 				}
-
-
-				$.ajax({
-					url: "/search_result",
-					type: "get",
-					data: data,
-
-					success: function(response) {
-						$("#result").html(response);
-					},
-					error: function(xhr) {
-
-					}
-				});
-			});
-		</script>
+		<script type="text/javascript" src="static/js/dataTable.js"></script>
+		<script type="text/javascript" src="static/js/search.js"></script>
 	<hr>
 {% endblock %}

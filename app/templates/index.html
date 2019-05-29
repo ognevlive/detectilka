@@ -11,18 +11,34 @@
 {% endblock %}
 
 {% block app_content %}
-
+	
 	<div>
 		<h4 class="display-4 pt-5">Upload file</h4>
-		<form class="mt-4" action="" method=post enctype=multipart/form-data onsubmit="
-			amplitude.getInstance().logEvent('upload_file');
+<!-- 			<form class="mt-4" action="" method=post enctype=multipart/form-data onsubmit="
+				amplitude.getInstance().logEvent('upload_file');
+				var csrf_access_token = document.getElementById('csrf2')
+				csrf_access_token.value = document.cookie.match(/csrf_access_token=([\w\d-]+)/)[1];
+				var csrf_refresh_token = document.getElementById('csrf3')
+				csrf_refresh_token.value = document.cookie.match(/csrf_refresh_token=([\w\d-]+)/)[1];
+			">
+				<div class="custom-file" draggable="true">
+				    <input type="file" name="file" class="custom-file-input" id="customFile">
+				    <label class="custom-file-label" for="customFile">Choose file</label>
+		 		</div>
 
-			var csrf_access_token = document.getElementById('csrf2')
-			csrf_access_token.value = document.cookie.match(/csrf_access_token=([\w\d-]+)/)[1];
 
-			var csrf_refresh_token = document.getElementById('csrf3')
-			csrf_refresh_token.value = document.cookie.match(/csrf_refresh_token=([\w\d-]+)/)[1];
-		">
+		        <div class="custom-control custom-checkbox mt-3 pl-0">
+				    <button type="submit" class="btn btn-primary mr-5">Submit</button>
+					<label class="form-check-label">
+						<input type="checkbox" class="form-check-input" value="">Anonymously
+					</label>
+				</div>
+
+				<input type="hidden" id="csrf2" name="csrf_access_token">
+				<input type="hidden" id="csrf3" name="csrf_refresh_token">
+
+	    	</form> -->
+		<form class="mt-4" action="" method=post enctype=multipart/form-data id="btn4">
 			<div class="custom-file" draggable="true">
 			    <input type="file" name="file" class="custom-file-input" id="customFile">
 			    <label class="custom-file-label" for="customFile">Choose file</label>
@@ -38,22 +54,16 @@
 
 			<input type="hidden" id="csrf2" name="csrf_access_token">
 			<input type="hidden" id="csrf3" name="csrf_refresh_token">
+            <script type="text/javascript" src="static/js/csrf.js"></script>
 
 	    </form>
     </div>
-
-    <script>
-		$(".custom-file-input").on("change", function() {
-		  var fileName = $(this).val().split("\\").pop();
-		  $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
-		});
-	</script>
 
 	<hr>
 
 	<div id="result">
 		{% if samples %}
-			<table id="samplesTable" class="table table-bordered" style="width: 100%">
+			<table id="samplesTable" class="table table-bordered">
 				<p class="display-4 mt-4 mb-4">Latest files:</p>
 				<thead class="thead-dark">
 					<tr class="table-row">
@@ -111,57 +121,11 @@
 		{% endif %}
 	</div>
 
-	    <link rel="stylesheet"  src="https://cdn.datatables.net/buttons/1.5.6/css/buttons.bootstrap4.min.css"></script>
-	    <script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.colVis.min.js"></script>
+    <link rel="stylesheet"  src="https://cdn.datatables.net/buttons/1.5.6/css/buttons.bootstrap4.min.css"></script>
+    <script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.colVis.min.js"></script>
 
-		<script>
-			var toSkip = [];
-				for (var i = 1; i <= 12; i++) {
-				toSkip.push(-1 * i);
-			}
+    <script type="text/javascript" src="static/js/uploadBtn.js"></script>
+    <script type="text/javascript" src="static/js/dataTable.js"></script>
 
-			$(document).ready(function () {
-				var table = $('#samplesTable').DataTable({
-					"pagingType": "full_numbers",
-				    "bLengthChange": false,
-				    "bFilter": true,
-					"searching": false,
-					buttons: [ 'copy', 'excel', 'pdf', 'colvis' ],
-					columnDefs: [
-			            {
-			                "targets": toSkip,
-			                "visible": false
-			            },
-			           	{ 
-			           		"max-width": "20%", 
-			           		"targets": 0 
-			           	},
-			        ],
-	        		"scrollX": true ,
-				});
-
-				table.buttons().container().appendTo( '#samplesTable_wrapper .col-md-6:eq(0)' );
-			});
-
-		</script>
-
-		<script type="text/javascript">
-			var checkDiv = setInterval(function(){
-				var buttons = document.getElementsByClassName("dt-buttons btn-group")
-				if (buttons[0] != undefined) {
-					var pdf   = buttons[0].children[2]
-					var excel = buttons[0].children[1]
-
-					pdf.onclick = function () {
-						amplitude.getInstance().logEvent('download_pdf');
-					}
-
-					excel.onclick = function () {
-						amplitude.getInstance().logEvent('download_excel');
-					}
-		           	clearInterval(checkDiv);
-				} 
-	    	}, 100); 
-		</script>
 
 {% endblock %}

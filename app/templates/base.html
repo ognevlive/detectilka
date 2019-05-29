@@ -4,57 +4,24 @@
 
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs4-4.1.1/jq-3.3.1/jszip-2.5.0/dt-1.10.18/b-1.5.6/b-colvis-1.5.6/b-flash-1.5.6/b-html5-1.5.6/b-print-1.5.6/datatables.min.css"/>
      
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
+  <!--   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script> -->
     <script type="text/javascript" src="https://cdn.datatables.net/v/bs4-4.1.1/jq-3.3.1/jszip-2.5.0/dt-1.10.18/b-1.5.6/b-colvis-1.5.6/b-flash-1.5.6/b-html5-1.5.6/b-print-1.5.6/datatables.min.js"></script>
 
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0/dist/Chart.min.js"></script>
     <script type="text/javascript" src="/static/js/chartjs-plugin-colorschemes.min.js"></script>
 
+
+    <link rel="stylesheet"  src="https://cdn.datatables.net/buttons/1.5.6/css/buttons.bootstrap4.min.css"></script>
+    <script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.colVis.min.js"></script>
+        
     <link rel="shortcut icon" href="{{ url_for('static', filename='img/1024.jpg') }}">
     <title>{{ title }} - Detectilka</title>
 
-    <style type="text/css">
-        .navbar-light .nav-item.active .nav-link,
-        .navbar-light .nav-item .nav-link:active,
-        .navbar-light .nav-item .nav-link:focus,
-        .navbar-light .nav-item:hover .nav-link {
-            color: #0099CC;
-        }
-    </style>
+    <link rel="stylesheet" type="text/css" href="static/css/index.css">
 
+    <script type="text/javascript" src="/static/js/amplitude.js"></script>
 
-    <script type="text/javascript">
-      (function(e,t){var n=e.amplitude||{_q:[],_iq:{}};var r=t.createElement("script")
-      ;r.type="text/javascript";r.async=true
-      ;r.src="https://cdn.amplitude.com/libs/amplitude-4.5.2-min.gz.js"
-      ;r.onload=function(){if(e.amplitude.runQueuedFunctions){
-      e.amplitude.runQueuedFunctions()}else{
-      console.log("[Amplitude] Error: could not load SDK")}}
-      ;var i=t.getElementsByTagName("script")[0];i.parentNode.insertBefore(r,i)
-      ;function s(e,t){e.prototype[t]=function(){
-      this._q.push([t].concat(Array.prototype.slice.call(arguments,0)));return this}}
-      var o=function(){this._q=[];return this}
-      ;var a=["add","append","clearAll","prepend","set","setOnce","unset"]
-      ;for(var u=0;u<a.length;u++){s(o,a[u])}n.Identify=o;var c=function(){this._q=[]
-      ;return this}
-      ;var l=["setProductId","setQuantity","setPrice","setRevenueType","setEventProperties"]
-      ;for(var p=0;p<l.length;p++){s(c,l[p])}n.Revenue=c
-      ;var d=["init","logEvent","logRevenue","setUserId","setUserProperties","setOptOut",
-      "setVersionName","setDomain","setDeviceId","setGlobalUserProperties","identify",
-      "clearUserProperties","setGroup","logRevenueV2","regenerateDeviceId","logEventWithTimestamp",
-      "logEventWithGroups","setSessionId","resetSessionId"]
-      ;function v(e){function t(t){e[t]=function(){
-      e._q.push([t].concat(Array.prototype.slice.call(arguments,0)))}}
-      for(var n=0;n<d.length;n++){t(d[n])}}v(n);n.getInstance=function(e){
-      e=(!e||e.length===0?"$default_instance":e).toLowerCase()
-      ;if(!n._iq.hasOwnProperty(e)){n._iq[e]={_q:[]};v(n._iq[e])}return n._iq[e]}
-      ;e.amplitude=n})(window,document);
-
-      amplitude.getInstance().init("7a4f9fac5bfdf95c05844dbfc3ddf744");
-    </script>
-
-    
     <nav class="navbar navbar-expand-lg navbar-light bg-light nav fixed-top">
         <a class="navbar-brand" href="{{ url_for('index') }}">
             <img src="/static/img/1024.jpg" width="30" height="30" class="d-inline-block align-top" alt="">
@@ -63,10 +30,6 @@
 
        
     {% if request.path != "/login" %} 
-
-    <script type="text/javascript">
-      amplitude.getInstance().setUserId('{{username}}');
-    </script>
 
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav mr-auto" id="topNavbar">
@@ -81,12 +44,7 @@
         <form class="form-inline my-2 my-lg-0" action="/search" method="POST">
             <input type="hidden" id="csrf_access_token" name="csrf_access_token">
             <input type="hidden" id="csrf_refresh_token" name="csrf_refresh_token">
-            <script type="text/javascript">
-                var csrf_access_token = document.getElementById("csrf_access_token");
-                csrf_access_token.value = document.cookie.match(/csrf_access_token=([\w-]+)/)[1];
-                var csrf_refresh_token = document.getElementById("csrf_refresh_token");
-                csrf_refresh_token.value = document.cookie.match(/csrf_refresh_token=([\w-]+)/)[1];
-            </script>
+            <script type="text/javascript" src="static/js/csrf.js"></script>
 
             <input class="form-control mr-sm-2" type="text" name="req" placeholder="search file">
             <button class="btn btn-primary" type="submit">Search</button>
@@ -113,4 +71,13 @@
         {% block app_content %}{% endblock %}
     </div>
 
+
+    <footer class="page-footer font-small blue">
+    <div class="text-center py-3">2019 ibks | Ognev | Zavadskiy
+        <br>
+        <a href="http://ibks.spbstu.ru/"> ibks.spbstu.ru</a>
+    </div>
+
+</footer>
 </body>
+
